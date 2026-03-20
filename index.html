@@ -1,0 +1,603 @@
+<!-- Week 5 - Draw the Line (Menő Manó) -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Draw the Line — Menő Manó</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    touch-action: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    font-family: 'Courier New', monospace;
+  }
+  canvas {
+    display: block;
+    width: 100%; height: 100%;
+  }
+  #gameOver {
+    display: none;
+    position: fixed; inset: 0;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+  }
+  #gameOver.visible { display: flex; }
+  #gameOver .card {
+    background: #fff;
+    border: 3px solid #000;
+    border-radius: 12px;
+    padding: 40px 48px;
+    text-align: center;
+    max-width: 320px;
+  }
+  #gameOver h1 { font-size: 28px; margin-bottom: 12px; }
+  #gameOver .scores { font-size: 18px; margin-bottom: 24px; line-height: 1.8; }
+  #gameOver button {
+    font-family: 'Courier New', monospace;
+    font-size: 20px; font-weight: bold;
+    background: #fff; color: #000;
+    border: 3px solid #000;
+    border-radius: 8px;
+    padding: 14px 36px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  #gameOver button:hover, #gameOver button:active {
+    background: #000; color: #fff;
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="gameOver">
+  <div class="card">
+    <h1>Game Over</h1>
+    <div class="scores">
+      <div>Score: <span id="finalScore">0</span></div>
+      <div>Best: <span id="finalBest">0</span></div>
+    </div>
+    <button id="restartBtn">Draw Again</button>
+  </div>
+</div>
+<script>
+'use strict';
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const gameOverEl = document.getElementById('gameOver');
+const finalScoreEl = document.getElementById('finalScore');
+const finalBestEl = document.getElementById('finalBest');
+const restartBtn = document.getElementById('restartBtn');
+
+/* ── Sizing ── */
+let W, H;
+function resize() {
+  W = canvas.width = window.innerWidth * devicePixelRatio;
+  H = canvas.height = window.innerHeight * devicePixelRatio;
+  ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+}
+window.addEventListener('resize', resize);
+resize();
+/* logical width/height helpers */
+function lw() { return window.innerWidth; }
+function lh() { return window.innerHeight; }
+
+/* ── Constants ── */
+const WALK_SPEED = 1.8;        // px per frame
+const GROUND_Y_RATIO = 0.65;   // default ground height
+const LINE_THICK = 3;
+const MANO_SIZE = 28;
+const OBSTACLE_MIN_GAP = 280;  // min px between obstacles
+const SCORE_WALK_INTERVAL = 60; // frames per score tick while walking
+const OBSTACLE_BONUS = 25;
+
+/* ── Mood colours ── */
+const MOOD = {
+  happy:   '#D0E8FF',
+  waiting: '#FFF5CC',
+  tantrum: '#FFD0CC'
+};
+
+/* ── Game state ── */
+let state; // 'playing' | 'over'
+let score, bestScore, scoreTimer;
+let mano; // { x, y, vy, mood, frame, stuckTimer, onGround }
+let cameraX; // world X offset (scrolls left)
+let drawnPath; // array of {x, y} in world coords — the ground the player draws
+let obstacles; // array of obstacle objects
+let nextObstacleX;
+let obstacleInterval;
+let difficulty; // increases with score
+
+function init() {
+  state = 'playing';
+  score = 0;
+  scoreTimer = 0;
+  bestScore = parseInt(localStorage.getItem('mano_best') || '0', 10);
+  difficulty = 0;
+
+  const groundY = lh() * GROUND_Y_RATIO;
+
+  /* seed an initial flat path so Manó has somewhere to stand */
+  drawnPath = [];
+  for (let x = -100; x <= lw() * 0.45; x += 4) {
+    drawnPath.push({ x: x, y: groundY });
+  }
+
+  mano = {
+    x: 60,
+    y: groundY - 1,
+    vy: 0,
+    mood: 'happy',
+    frame: 0,
+    stuckTimer: 0,
+    onGround: true
+  };
+
+  cameraX = 0;
+  obstacles = [];
+  nextObstacleX = lw() * 1.2;
+  obstacleInterval = 400;
+
+  gameOverEl.classList.remove('visible');
+  gameOverEl.style.background = '';
+}
+
+/* ── Drawing input ── */
+let drawing = false;
+let lastDrawPt = null;
+
+function screenToWorld(sx, sy) {
+  return { x: sx + cameraX, y: sy };
+}
+
+function canDrawAt(worldX) {
+  // only allow drawing ahead of Manó (with small grace zone)
+  return worldX > mano.x - 10;
+}
+
+function addDrawPoint(sx, sy) {
+  const wp = screenToWorld(sx, sy);
+  if (!canDrawAt(wp.x)) return;
+
+  if (lastDrawPt) {
+    const dx = wp.x - lastDrawPt.x;
+    const dy = wp.y - lastDrawPt.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    // interpolate for smooth lines
+    const steps = Math.max(1, Math.floor(dist / 3));
+    for (let i = 1; i <= steps; i++) {
+      const t = i / steps;
+      drawnPath.push({
+        x: lastDrawPt.x + dx * t,
+        y: lastDrawPt.y + dy * t
+      });
+    }
+  } else {
+    drawnPath.push(wp);
+  }
+  lastDrawPt = wp;
+}
+
+function onPointerDown(sx, sy) {
+  if (state !== 'playing') return;
+  drawing = true;
+  lastDrawPt = null;
+  addDrawPoint(sx, sy);
+}
+function onPointerMove(sx, sy) {
+  if (!drawing || state !== 'playing') return;
+  addDrawPoint(sx, sy);
+}
+function onPointerUp() {
+  drawing = false;
+  lastDrawPt = null;
+}
+
+/* Mouse events */
+canvas.addEventListener('mousedown', e => { e.preventDefault(); onPointerDown(e.clientX, e.clientY); });
+canvas.addEventListener('mousemove', e => { e.preventDefault(); onPointerMove(e.clientX, e.clientY); });
+canvas.addEventListener('mouseup', e => { e.preventDefault(); onPointerUp(); });
+canvas.addEventListener('mouseleave', () => onPointerUp());
+
+/* Touch events */
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  const t = e.touches[0];
+  onPointerDown(t.clientX, t.clientY);
+}, { passive: false });
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  const t = e.touches[0];
+  onPointerMove(t.clientX, t.clientY);
+}, { passive: false });
+canvas.addEventListener('touchend', e => { e.preventDefault(); onPointerUp(); }, { passive: false });
+canvas.addEventListener('touchcancel', e => { e.preventDefault(); onPointerUp(); }, { passive: false });
+
+/* Prevent scrolling */
+document.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+
+/* ── Obstacles ── */
+function spawnObstacle() {
+  const groundY = lh() * GROUND_Y_RATIO;
+  const types = ['gap', 'wall', 'pit'];
+  const type = types[Math.floor(Math.random() * types.length)];
+  const obs = { type, x: nextObstacleX, passed: false };
+
+  switch (type) {
+    case 'gap':
+      obs.width = 60 + Math.random() * 40;
+      obs.y = groundY;
+      break;
+    case 'wall':
+      obs.width = 20 + Math.random() * 15;
+      obs.height = 50 + Math.random() * 40;
+      obs.y = groundY;
+      break;
+    case 'pit':
+      obs.width = 70 + Math.random() * 50;
+      obs.depth = 80 + Math.random() * 40;
+      obs.y = groundY;
+      break;
+  }
+
+  obstacles.push(obs);
+  // decrease interval as difficulty rises, min 160
+  obstacleInterval = Math.max(160, 400 - difficulty * 8);
+  nextObstacleX += obstacleInterval + obs.width + OBSTACLE_MIN_GAP * (0.6 + Math.random() * 0.4);
+}
+
+/* ── Find ground Y at a given world X ── */
+function getGroundY(worldX) {
+  // find the two path points surrounding worldX
+  if (drawnPath.length < 2) return null;
+
+  // Binary-ish search: path is mostly sorted by x
+  let best = null;
+  let bestDist = Infinity;
+  for (let i = 0; i < drawnPath.length - 1; i++) {
+    const a = drawnPath[i], b = drawnPath[i + 1];
+    if ((a.x <= worldX && b.x >= worldX) || (a.x >= worldX && b.x <= worldX)) {
+      const range = b.x - a.x;
+      if (Math.abs(range) < 0.01) continue;
+      const t = (worldX - a.x) / range;
+      const y = a.y + (b.y - a.y) * t;
+      const dist = Math.abs(t - 0.5);
+      if (dist < bestDist) { bestDist = dist; best = y; }
+    }
+  }
+  return best;
+}
+
+/* ── Update ── */
+function update() {
+  if (state !== 'playing') return;
+
+  difficulty = Math.floor(score / 50);
+
+  /* Spawn obstacles */
+  const aheadEdge = cameraX + lw() * 1.5;
+  if (nextObstacleX < aheadEdge) {
+    spawnObstacle();
+  }
+
+  /* Find ground ahead of Manó */
+  const lookAhead = mano.x + 4;
+  const groundY = getGroundY(lookAhead);
+
+  if (groundY !== null) {
+    // Ground exists ahead
+    mano.mood = 'happy';
+    mano.stuckTimer = 0;
+    mano.x += WALK_SPEED;
+    // Smoothly follow the ground Y
+    const targetY = getGroundY(mano.x);
+    if (targetY !== null) {
+      mano.y = targetY;
+      mano.vy = 0;
+      mano.onGround = true;
+    }
+  } else {
+    // No ground ahead — get stuck
+    mano.stuckTimer++;
+    if (mano.stuckTimer < 60) {
+      mano.mood = 'waiting';
+    } else {
+      mano.mood = 'tantrum';
+    }
+  }
+
+  /* Apply gravity if not on ground */
+  const currentGround = getGroundY(mano.x);
+  if (currentGround === null) {
+    // Manó is off the path — apply gravity
+    mano.vy += 0.35;
+    mano.y += mano.vy;
+    mano.onGround = false;
+    if (mano.mood === 'happy') mano.mood = 'waiting';
+  }
+
+  /* Falling off screen = game over */
+  if (mano.y > lh() + 60) {
+    gameOver();
+    return;
+  }
+
+  /* Camera follows Manó */
+  const targetCam = mano.x - lw() * 0.25;
+  cameraX += (targetCam - cameraX) * 0.08;
+
+  /* Prune old path points behind camera */
+  const pruneX = cameraX - 80;
+  while (drawnPath.length > 2 && drawnPath[0].x < pruneX && drawnPath[1].x < pruneX) {
+    drawnPath.shift();
+  }
+
+  /* Prune old obstacles */
+  obstacles = obstacles.filter(o => o.x + (o.width || 0) > cameraX - 100);
+
+  /* Check obstacle passage for bonus */
+  for (const obs of obstacles) {
+    if (!obs.passed && mano.x > obs.x + (obs.width || 0)) {
+      obs.passed = true;
+      score += OBSTACLE_BONUS;
+    }
+  }
+
+  /* Score while walking */
+  if (mano.mood === 'happy') {
+    scoreTimer++;
+    if (scoreTimer >= SCORE_WALK_INTERVAL) {
+      score++;
+      scoreTimer = 0;
+    }
+  }
+
+  mano.frame++;
+}
+
+function gameOver() {
+  state = 'over';
+  if (score > bestScore) {
+    bestScore = score;
+    localStorage.setItem('mano_best', String(bestScore));
+  }
+  finalScoreEl.textContent = score;
+  finalBestEl.textContent = bestScore;
+  gameOverEl.style.background = 'rgba(255,208,204,0.7)';
+  gameOverEl.classList.add('visible');
+}
+
+/* ── Drawing / Render ── */
+function drawBackground() {
+  let bg;
+  if (state === 'over') {
+    bg = MOOD.tantrum;
+  } else {
+    bg = MOOD[mano.mood] || MOOD.happy;
+  }
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, lw(), lh());
+}
+
+function drawPath() {
+  if (drawnPath.length < 2) return;
+  ctx.save();
+  ctx.translate(-cameraX, 0);
+  ctx.beginPath();
+  ctx.moveTo(drawnPath[0].x, drawnPath[0].y);
+  for (let i = 1; i < drawnPath.length; i++) {
+    ctx.lineTo(drawnPath[i].x, drawnPath[i].y);
+  }
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = LINE_THICK;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawObstacles() {
+  ctx.save();
+  ctx.translate(-cameraX, 0);
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = LINE_THICK;
+
+  for (const obs of obstacles) {
+    switch (obs.type) {
+      case 'gap': {
+        // Draw a gap indicator — two broken edges
+        const y = obs.y;
+        ctx.beginPath();
+        ctx.moveTo(obs.x, y);
+        ctx.lineTo(obs.x, y + 30);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(obs.x + obs.width, y);
+        ctx.lineTo(obs.x + obs.width, y + 30);
+        ctx.stroke();
+        // Dashed line showing the gap
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(obs.x, y + 15);
+        ctx.lineTo(obs.x + obs.width, y + 15);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        break;
+      }
+      case 'wall': {
+        const y = obs.y;
+        ctx.strokeRect(obs.x, y - obs.height, obs.width, obs.height);
+        // hatching
+        for (let hy = y - obs.height + 8; hy < y; hy += 10) {
+          ctx.beginPath();
+          ctx.moveTo(obs.x + 2, hy);
+          ctx.lineTo(obs.x + obs.width - 2, hy + 6);
+          ctx.stroke();
+        }
+        break;
+      }
+      case 'pit': {
+        const y = obs.y;
+        ctx.beginPath();
+        ctx.moveTo(obs.x, y);
+        ctx.lineTo(obs.x, y + obs.depth);
+        ctx.lineTo(obs.x + obs.width, y + obs.depth);
+        ctx.lineTo(obs.x + obs.width, y);
+        ctx.stroke();
+        break;
+      }
+    }
+  }
+  ctx.restore();
+}
+
+function drawMano() {
+  ctx.save();
+  const sx = mano.x - cameraX;
+  const sy = mano.y;
+  const s = MANO_SIZE;
+
+  ctx.strokeStyle = '#000';
+  ctx.fillStyle = '#000';
+  ctx.lineWidth = 2.5;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  /* Animation offsets */
+  let bobY = 0, tilt = 0, legPhase = 0;
+  if (mano.mood === 'happy') {
+    bobY = Math.sin(mano.frame * 0.15) * 3;
+    legPhase = mano.frame * 0.15;
+  } else if (mano.mood === 'tantrum') {
+    bobY = Math.sin(mano.frame * 0.5) * 5;
+    tilt = Math.sin(mano.frame * 0.6) * 0.15;
+  } else if (mano.mood === 'waiting') {
+    bobY = Math.sin(mano.frame * 0.08) * 1.5;
+  }
+
+  ctx.translate(sx, sy + bobY);
+  ctx.rotate(tilt);
+
+  /* Legs */
+  const legSpread = mano.mood === 'happy' ? Math.sin(legPhase) * 8 : 0;
+  // left leg
+  ctx.beginPath();
+  ctx.moveTo(0, -s * 0.3);
+  ctx.lineTo(-4 - legSpread, 0);
+  ctx.stroke();
+  // right leg
+  ctx.beginPath();
+  ctx.moveTo(0, -s * 0.3);
+  ctx.lineTo(4 + legSpread, 0);
+  ctx.stroke();
+
+  /* Body — single line from feet up */
+  ctx.beginPath();
+  ctx.moveTo(0, -s * 0.3);
+  ctx.lineTo(0, -s * 0.9);
+  ctx.stroke();
+
+  /* Arms */
+  const armSwing = mano.mood === 'happy' ? Math.sin(legPhase + 1) * 12 : 0;
+  // left arm
+  ctx.beginPath();
+  ctx.moveTo(0, -s * 0.75);
+  ctx.lineTo(-10 - armSwing * 0.5, -s * 0.5);
+  ctx.stroke();
+  // right arm
+  ctx.beginPath();
+  ctx.moveTo(0, -s * 0.75);
+  ctx.lineTo(10 + armSwing * 0.5, -s * 0.55);
+  ctx.stroke();
+
+  /* Head */
+  const headR = s * 0.22;
+  const headX = 0;
+  const headY = -s * 0.9 - headR;
+  ctx.beginPath();
+  ctx.arc(headX, headY, headR, 0, Math.PI * 2);
+  ctx.stroke();
+
+  /* Nose — big and pointing right, La Linea signature */
+  ctx.beginPath();
+  ctx.moveTo(headX + headR - 1, headY);
+  ctx.lineTo(headX + headR + 10, headY + 3);
+  ctx.lineTo(headX + headR - 1, headY + 4);
+  ctx.stroke();
+
+  /* Eye — small dot */
+  ctx.beginPath();
+  ctx.arc(headX + headR * 0.3, headY - 1, 1.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  /* Mouth — changes with mood */
+  if (mano.mood === 'happy') {
+    ctx.beginPath();
+    ctx.arc(headX + headR * 0.3, headY + headR * 0.4, 3, 0, Math.PI);
+    ctx.stroke();
+  } else if (mano.mood === 'tantrum') {
+    // open shouting mouth
+    ctx.beginPath();
+    ctx.arc(headX + headR * 0.3, headY + headR * 0.35, 3.5, 0, Math.PI * 2);
+    ctx.stroke();
+  } else {
+    // neutral line
+    ctx.beginPath();
+    ctx.moveTo(headX, headY + headR * 0.45);
+    ctx.lineTo(headX + headR * 0.6, headY + headR * 0.45);
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
+function drawHUD() {
+  ctx.save();
+  ctx.fillStyle = '#000';
+  ctx.textAlign = 'center';
+  ctx.font = 'bold 22px Courier New, monospace';
+  ctx.fillText(String(score), lw() / 2, 36);
+  ctx.font = '14px Courier New, monospace';
+  ctx.fillStyle = '#555';
+  ctx.fillText('Best: ' + bestScore, lw() / 2, 56);
+  ctx.restore();
+
+  /* Draw hint on right side when stuck */
+  if (mano.mood !== 'happy' && state === 'playing') {
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    ctx.textAlign = 'center';
+    ctx.font = '16px Courier New, monospace';
+    ctx.fillText('Draw the path ahead →', lw() * 0.7, lh() * 0.15);
+    ctx.restore();
+  }
+}
+
+/* ── Main Loop ── */
+function frame() {
+  update();
+  drawBackground();
+  drawPath();
+  drawObstacles();
+  if (state === 'playing') drawMano();
+  drawHUD();
+  requestAnimationFrame(frame);
+}
+
+/* ── Restart ── */
+restartBtn.addEventListener('click', () => { init(); });
+
+/* ── Boot ── */
+init();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
