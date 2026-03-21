@@ -1,729 +1,726 @@
-<!-- Week 05 - Obstacle Sculptor (Menő Manó) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Obstacle Sculptor — Menő Manó</title>
+<title>Menő Manó – La Linea Runner</title>
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-html, body {
-  width: 100%; height: 100%;
-  overflow: hidden;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  touch-action: none;
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  user-select: none;
-  transition: background 0.4s;
-}
-#wrap {
-  display: flex; flex-direction: column;
-  width: 100%; height: 100%;
-  transition: background 0.4s;
-}
-#hud {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 6px 14px; font-size: 14px; color: #333;
-  background: rgba(255,255,255,0.5); z-index: 2;
-  min-height: 38px; flex-shrink: 0;
-}
-#hud .lives { display: flex; gap: 6px; min-width: 80px; }
-#hud .score-area { text-align: center; flex: 1; }
-#hud .score-area .main { font-weight: 700; font-size: 16px; }
-#hud .score-area .sub  { font-size: 11px; color: #888; }
-#hud .level-area { min-width: 80px; text-align: right; font-weight: 700; }
-canvas { flex: 1; display: block; cursor: crosshair; }
-#tray {
-  display: flex; align-items: center; justify-content: center;
-  gap: 10px; padding: 8px 12px;
-  background: rgba(245,245,240,0.95); border-top: 2px solid #ccc;
-  min-height: 68px; z-index: 2; flex-shrink: 0;
-}
-.tool-btn {
-  width: 62px; height: 56px; border: 2.5px solid #666;
-  border-radius: 10px; background: #fff; cursor: pointer;
-  display: flex; flex-direction: column; align-items: center;
-  justify-content: center; font-size: 10px; font-weight: 700;
-  color: #444; gap: 2px; position: relative;
-  transition: all 0.15s;
-}
-.tool-btn:active { transform: scale(0.95); }
-.tool-btn.selected { border-color: #2080e0; background: #dceeff; box-shadow: 0 0 0 2px #2080e0; }
-.tool-btn.used { opacity: 0.3; pointer-events: none; }
-.tool-btn canvas { width: 38px; height: 24px; flex: none; pointer-events: none; }
-#go-btn {
-  width: 72px; height: 56px; border: 2.5px solid #2a7a2a;
-  border-radius: 12px; background: #4caf50; color: #fff;
-  font-size: 18px; font-weight: 800; cursor: pointer;
-  letter-spacing: 2px; transition: all 0.15s;
-}
-#go-btn:active { background: #388e3c; transform: scale(0.95); }
-#go-btn.disabled { background: #bbb; border-color: #999; pointer-events: none; }
-.popup-btn {
-  display: none; position: fixed; left: 50%; transform: translateX(-50%);
-  padding: 14px 40px; font-size: 18px; font-weight: 700;
-  border: 2.5px solid #555; border-radius: 14px; cursor: pointer;
-  z-index: 10; background: #fff; color: #333;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-  transition: all 0.15s;
-}
-.popup-btn:active { transform: translateX(-50%) scale(0.95); }
-#retry-btn { bottom: 110px; }
-#next-btn  { bottom: 110px; }
-#overlay {
-  display: none; position: fixed; inset: 0;
-  background: rgba(0,0,0,0.6); z-index: 20;
-  flex-direction: column; align-items: center; justify-content: center;
-  color: #fff; text-align: center;
-}
-#overlay .card {
-  background: #fff; color: #333; border-radius: 16px;
-  padding: 36px 44px; max-width: 320px;
-  box-shadow: 0 8px 40px rgba(0,0,0,0.3);
-}
-#overlay h1 { font-size: 28px; margin-bottom: 12px; }
-#overlay p  { font-size: 17px; margin-bottom: 6px; line-height: 1.6; }
-#overlay button {
-  margin-top: 20px; padding: 14px 44px; font-size: 18px;
-  font-weight: 700; border: 2.5px solid #2a7a2a; border-radius: 14px;
-  background: #4caf50; color: #fff; cursor: pointer;
-}
-#overlay button:active { background: #388e3c; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: #1a1a2e;
+    font-family: 'Segoe UI', sans-serif;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  #wrap {
+    position: relative;
+    width: 100%; height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  canvas {
+    display: block;
+    flex: 1;
+    width: 100%;
+  }
+  #controls {
+    display: flex;
+    gap: 8px;
+    padding: 10px 8px 14px;
+    justify-content: center;
+    background: #111;
+  }
+  .btn {
+    flex: 1;
+    max-width: 100px;
+    padding: 14px 4px 10px;
+    border: 2px solid #444;
+    border-radius: 14px;
+    background: #222;
+    color: #ccc;
+    font-size: 13px;
+    font-weight: 700;
+    text-align: center;
+    cursor: pointer;
+    transition: background .1s, border-color .1s, transform .08s;
+    line-height: 1.15;
+  }
+  .btn svg { display: block; margin: 0 auto 4px; }
+  .btn:active, .btn.pressed {
+    background: #444;
+    border-color: #fff;
+    transform: scale(0.95);
+  }
+  .btn.correct {
+    background: #1b5e20;
+    border-color: #4caf50;
+  }
+  .btn.wrong {
+    background: #7f0000;
+    border-color: #f44336;
+  }
+  #overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.7);
+    z-index: 10;
+  }
+  #overlay.hidden { display: none; }
+  #overlay h1 {
+    color: #fff;
+    font-size: 32px;
+    margin-bottom: 6px;
+  }
+  #overlay .sub {
+    color: #aaa;
+    font-size: 18px;
+    margin-bottom: 20px;
+  }
+  #overlay .score-line {
+    color: #ffd54f;
+    font-size: 22px;
+    margin-bottom: 4px;
+  }
+  #overlay button {
+    margin-top: 18px;
+    padding: 14px 40px;
+    font-size: 20px;
+    font-weight: 700;
+    border: none;
+    border-radius: 12px;
+    background: #ffd54f;
+    color: #111;
+    cursor: pointer;
+  }
+  #overlay button:active { background: #ffc107; }
 </style>
 </head>
 <body>
 <div id="wrap">
-  <div id="hud">
-    <div class="lives" id="lives"></div>
-    <div class="score-area">
-      <div class="main" id="score-display">Score: 0</div>
-      <div class="sub" id="best-display">Best: 0</div>
-    </div>
-    <div class="level-area" id="level-display">Level 1</div>
-  </div>
   <canvas id="c"></canvas>
-  <div id="tray"></div>
-</div>
-<button class="popup-btn" id="retry-btn">Try Again</button>
-<button class="popup-btn" id="next-btn">Next Level</button>
-<div id="overlay">
-  <div class="card">
-    <h1>Game Over</h1>
-    <p id="ov-score"></p>
-    <p id="ov-levels"></p>
-    <p id="ov-best"></p>
-    <button id="play-again-btn">Play Again</button>
+  <div id="controls">
+    <button class="btn" data-action="bridge">
+      <svg width="36" height="28" viewBox="0 0 36 28"><path d="M2 24 Q18 8 34 24" stroke="#aaa" stroke-width="3" fill="none"/><line x1="2" y1="24" x2="34" y2="24" stroke="#aaa" stroke-width="2"/></svg>
+      Bridge
+    </button>
+    <button class="btn" data-action="trampoline">
+      <svg width="36" height="28" viewBox="0 0 36 28"><ellipse cx="18" cy="22" rx="14" ry="4" stroke="#aaa" stroke-width="2.5" fill="none"/><path d="M8 22 Q18 8 28 22" stroke="#aaa" stroke-width="2" fill="none" stroke-dasharray="3,2"/></svg>
+      Tramp
+    </button>
+    <button class="btn" data-action="ladder">
+      <svg width="36" height="28" viewBox="0 0 36 28"><line x1="12" y1="2" x2="12" y2="26" stroke="#aaa" stroke-width="2.5"/><line x1="24" y1="2" x2="24" y2="26" stroke="#aaa" stroke-width="2.5"/><line x1="12" y1="8" x2="24" y2="8" stroke="#aaa" stroke-width="2"/><line x1="12" y1="14" x2="24" y2="14" stroke="#aaa" stroke-width="2"/><line x1="12" y1="20" x2="24" y2="20" stroke="#aaa" stroke-width="2"/></svg>
+      Ladder
+    </button>
+    <button class="btn" data-action="duck">
+      <svg width="36" height="28" viewBox="0 0 36 28"><path d="M10 18 Q10 10 18 10 Q26 10 26 16" stroke="#aaa" stroke-width="2.5" fill="none"/><circle cx="20" cy="12" r="1.5" fill="#aaa"/><line x1="26" y1="16" x2="30" y2="14" stroke="#aaa" stroke-width="2"/><line x1="10" y1="22" x2="30" y2="22" stroke="#aaa" stroke-width="2"/></svg>
+      Duck
+    </button>
+  </div>
+  <div id="overlay">
+    <h1 id="olTitle">Menő Manó</h1>
+    <div class="sub" id="olSub">La Linea Runner</div>
+    <div class="score-line" id="olScore"></div>
+    <div class="score-line" id="olBest"></div>
+    <button id="olBtn">START</button>
   </div>
 </div>
+
 <script>
-'use strict';
+// ── Canvas setup ──
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const overlay = document.getElementById('overlay');
+const olTitle = document.getElementById('olTitle');
+const olSub = document.getElementById('olSub');
+const olScore = document.getElementById('olScore');
+const olBest = document.getElementById('olBest');
+const olBtn = document.getElementById('olBtn');
+const buttons = document.querySelectorAll('.btn');
 
-/* ═══════════════════════════════════════════
-   OBSTACLE SCULPTOR — Menő Manó
-   ═══════════════════════════════════════════ */
-
-// ── Enums ──
-const TOOL  = { BRIDGE:'bridge', RAMP:'ramp', TRAMPOLINE:'trampoline', BUCKET:'bucket' };
-const OBS   = { GAP:'gap', WALL:'wall', PIT:'pit' };
-const PHASE = { PLACE:0, RUN:1, SUCCESS:2, TANTRUM:3, GAMEOVER:4 };
-
-const MOOD_COL = {
-  place:   '#FFFDF0',
-  run:     '#FFF5CC',
-  success: '#C0E0FF',
-  tantrum: '#FFD0CC',
-};
-
-// ── DOM refs ──
-const $ = id => document.getElementById(id);
-const cvs = $('c');
-const ctx  = cvs.getContext('2d');
-
-// ── Layout ──
-let W, H, groundY;
-const LINE_Y_RATIO = 0.68;
+let W, H, groundY, dpr;
 
 function resize() {
-  const hud  = $('hud');
-  const tray = $('tray');
-  const wrapH = window.innerHeight;
-  W = cvs.width  = window.innerWidth;
-  H = cvs.height = wrapH - hud.offsetHeight - tray.offsetHeight;
-  groundY = Math.round(H * LINE_Y_RATIO);
+  dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  W = rect.width;
+  H = rect.height;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  groundY = H * 0.72;
 }
 window.addEventListener('resize', resize);
+resize();
+
+// ── Constants ──
+const MANO_X = 70;                 // Mano's fixed screen X
+const BASE_SPEED = 1.8;            // starting scroll px/frame
+const SPEED_INC = 0.08;            // speed increase per obstacle passed
+const MAX_SPEED = 7;
+const OBS_MIN_GAP = 280;           // min px between obstacles
+const OBS_MAX_GAP = 500;
+const ACTION_WINDOW = 120;         // px range before obstacle to accept input
+const GAP_WIDTH = 80;
+const WALL_HEIGHT = 70;
+const WALL_WIDTH = 18;
 
 // ── Game state ──
-let phase, score, bestScore = 0, lives, level, firstTry;
-let mano, obstacles, availableTools, placedTools, selectedTool;
-let animId, lastTime, tantrumTimer, successTimer;
-let pointerPos = null;
+let state = 'menu'; // menu | running | acting | dead
+let score = 0;
+let best = parseInt(localStorage.getItem('mano_best') || '0', 10);
+let speed = BASE_SPEED;
+let obstacles = [];
+let nextObsDist = 300;
+let manoAnim = 0;       // walk animation phase
+let actionTimer = 0;    // frames remaining in action animation
+let actionType = '';     // which action is playing
+let actionSuccess = false;
+let manoY = 0;           // vertical offset for animations
+let manoSquish = false;  // ducking
+let deadTimer = 0;
+let lineSegments = [];   // the ground line pieces
 
-// ── Level catalogue ──
-const LEVELS = [
-  // 1-3: single obstacle, 3 tools (tutorial)
-  { obs:[{type:OBS.GAP}],  tools:[TOOL.BRIDGE, TOOL.RAMP, TOOL.TRAMPOLINE] },
-  { obs:[{type:OBS.WALL}], tools:[TOOL.RAMP, TOOL.TRAMPOLINE, TOOL.BRIDGE] },
-  { obs:[{type:OBS.PIT}],  tools:[TOOL.BUCKET, TOOL.RAMP, TOOL.BRIDGE] },
-  // 4-6: two obstacles, 3 tools
-  { obs:[{type:OBS.GAP},{type:OBS.WALL}],  tools:[TOOL.BRIDGE, TOOL.RAMP, TOOL.TRAMPOLINE] },
-  { obs:[{type:OBS.WALL},{type:OBS.PIT}],  tools:[TOOL.TRAMPOLINE, TOOL.BUCKET, TOOL.RAMP] },
-  { obs:[{type:OBS.GAP},{type:OBS.PIT}],   tools:[TOOL.BRIDGE, TOOL.BUCKET, TOOL.RAMP] },
-  // 7+: two/three obstacles, 2 tools (hard)
-  { obs:[{type:OBS.GAP},{type:OBS.WALL}],               tools:[TOOL.RAMP, TOOL.TRAMPOLINE] },
-  { obs:[{type:OBS.WALL},{type:OBS.PIT},{type:OBS.GAP}], tools:[TOOL.RAMP, TOOL.TRAMPOLINE] },
-  { obs:[{type:OBS.PIT},{type:OBS.GAP}],                 tools:[TOOL.RAMP, TOOL.BRIDGE] },
-  { obs:[{type:OBS.WALL},{type:OBS.GAP},{type:OBS.PIT}], tools:[TOOL.TRAMPOLINE, TOOL.BUCKET] },
-];
+// obstacle types and valid actions
+const OBS_TYPES = ['gap', 'wall', 'bird'];
+const VALID_ACTIONS = {
+  gap: ['bridge'],
+  wall: ['trampoline', 'ladder'],
+  bird: ['duck']
+};
 
-function getLevelDef(n) {
-  return JSON.parse(JSON.stringify(LEVELS[(n - 1) % LEVELS.length]));
+// ── Obstacle spawning ──
+function spawnObstacle() {
+  // weight types: gap & wall more common early, birds after score 3
+  const types = score < 3
+    ? ['gap', 'wall']
+    : ['gap', 'wall', 'bird', 'gap', 'wall', 'bird'];
+  const type = types[Math.floor(Math.random() * types.length)];
+  const x = W + 40;
+  obstacles.push({ type, x, passed: false, acted: false });
+  nextObsDist = OBS_MIN_GAP + Math.random() * (OBS_MAX_GAP - OBS_MIN_GAP);
 }
 
-// ── Obstacle dimensions ──
-function obsW(t) { return t === OBS.WALL ? 28 : 65; }
-function obsH(t) { return t === OBS.WALL ? 65 : t === OBS.PIT ? 55 : 22; }
-
-// ── Mood ──
-function setMood(key) {
-  const c = MOOD_COL[key] || MOOD_COL.place;
-  document.body.style.background = c;
-  $('wrap').style.background = c;
+// ── Start / Restart ──
+function startGame() {
+  state = 'running';
+  score = 0;
+  speed = BASE_SPEED;
+  obstacles = [];
+  nextObsDist = 300;
+  manoAnim = 0;
+  actionTimer = 0;
+  actionType = '';
+  manoY = 0;
+  manoSquish = false;
+  deadTimer = 0;
+  overlay.classList.add('hidden');
+  clearButtonEffects();
 }
 
-// ── HUD ──
-function updateHUD() {
-  $('score-display').textContent = 'Score: ' + score;
-  $('best-display').textContent  = 'Best: ' + bestScore;
-  $('level-display').textContent = 'Level ' + level;
-  let html = '';
-  for (let i = 0; i < 3; i++) {
-    const op = i < lives ? 1 : 0.18;
-    html += `<svg width="24" height="24" viewBox="0 0 24 24" style="opacity:${op}">
-      <circle cx="12" cy="11" r="8" fill="none" stroke="#333" stroke-width="1.5"/>
-      <circle cx="10" cy="10" r="1.2" fill="#333"/>
-      <line x1="14" y1="9" x2="18" y2="10" stroke="#333" stroke-width="1.5" stroke-linecap="round"/>
-      <path d="M9 15 Q12 17 15 15" fill="none" stroke="#333" stroke-width="1"/>
-    </svg>`;
-  }
-  $('lives').innerHTML = html;
-}
-
-// ── Tool tray ──
-function buildTray() {
-  const tray = $('tray');
-  tray.innerHTML = '';
-  availableTools.forEach(t => {
-    const btn = document.createElement('button');
-    btn.className = 'tool-btn';
-    btn.dataset.tool = t;
-    const mc = document.createElement('canvas');
-    mc.width = 38; mc.height = 24;
-    drawToolIcon(mc.getContext('2d'), t, 38, 24);
-    btn.appendChild(mc);
-    const lbl = document.createElement('span');
-    lbl.textContent = t[0].toUpperCase() + t.slice(1);
-    btn.appendChild(lbl);
-    btn.addEventListener('pointerdown', e => { e.stopPropagation(); selectTool(t); });
-    tray.appendChild(btn);
-  });
-  const go = document.createElement('button');
-  go.id = 'go-btn';
-  go.textContent = 'GO';
-  go.addEventListener('pointerdown', e => { e.stopPropagation(); startRun(); });
-  tray.appendChild(go);
-  resize();          // recalc canvas height after tray rebuild
-}
-
-function drawToolIcon(c, type, w, h) {
-  c.strokeStyle = '#444'; c.lineWidth = 1.6; c.lineCap = 'round';
-  if (type === TOOL.BRIDGE) {
-    c.beginPath(); c.moveTo(3,h-5); c.lineTo(w-3,h-5); c.stroke();
-    c.beginPath(); c.moveTo(6,h-5); c.lineTo(6,h-1); c.stroke();
-    c.beginPath(); c.moveTo(w-6,h-5); c.lineTo(w-6,h-1); c.stroke();
-  } else if (type === TOOL.RAMP) {
-    c.beginPath(); c.moveTo(3,h-2); c.lineTo(w-3,4); c.lineTo(w-3,h-2); c.closePath(); c.stroke();
-  } else if (type === TOOL.TRAMPOLINE) {
-    c.beginPath(); c.moveTo(6,h-2); c.lineTo(6,h*0.45); c.stroke();
-    c.beginPath(); c.moveTo(w-6,h-2); c.lineTo(w-6,h*0.45); c.stroke();
-    c.beginPath(); c.moveTo(4,h*0.45); c.quadraticCurveTo(w/2,h*0.45+10,w-4,h*0.45); c.stroke();
-  } else if (type === TOOL.BUCKET) {
-    c.beginPath(); c.moveTo(8,3); c.lineTo(5,h-2); c.lineTo(w-5,h-2); c.lineTo(w-8,3); c.stroke();
-  }
-}
-
-function selectTool(type) {
-  if (phase !== PHASE.PLACE) return;
-  // if this tool is already placed, remove it so player can re-place
-  const idx = placedTools.findIndex(p => p.type === type);
-  if (idx !== -1) placedTools.splice(idx, 1);
-  selectedTool = type;
-  syncTrayUI();
-}
-
-function syncTrayUI() {
-  const used = new Set(placedTools.map(p => p.type));
-  document.querySelectorAll('.tool-btn').forEach(b => {
-    const t = b.dataset.tool;
-    b.classList.toggle('selected', t === selectedTool);
-    b.classList.toggle('used', used.has(t) && t !== selectedTool);
-  });
-}
-
-// ── Canvas interaction ──
-cvs.addEventListener('pointerdown', e => {
-  if (phase !== PHASE.PLACE) return;
-  const rect = cvs.getBoundingClientRect();
-  const px = (e.clientX - rect.left) * (W / rect.width);
-  const py = (e.clientY - rect.top)  * (H / rect.height);
-
-  // Tap on placed tool → remove it
-  if (!selectedTool) {
-    for (let i = placedTools.length - 1; i >= 0; i--) {
-      const p = placedTools[i];
-      if (Math.abs(px - p.x) < 32 && Math.abs(py - p.y) < 32) {
-        selectedTool = p.type;
-        placedTools.splice(i, 1);
-        syncTrayUI();
-        return;
-      }
+function showMenu(isDead) {
+  state = 'menu';
+  if (isDead) {
+    if (score > best) {
+      best = score;
+      localStorage.setItem('mano_best', String(best));
     }
+    olTitle.textContent = 'Game Over!';
+    olSub.textContent = '';
+    olScore.textContent = 'Score: ' + score;
+    olBest.textContent = 'Best: ' + best;
+    olBtn.textContent = 'RETRY';
+  } else {
+    olTitle.textContent = 'Menő Manó';
+    olSub.textContent = 'La Linea Runner';
+    olScore.textContent = best > 0 ? 'Best: ' + best : '';
+    olBest.textContent = '';
+    olBtn.textContent = 'START';
+  }
+  overlay.classList.remove('hidden');
+}
+
+olBtn.addEventListener('click', startGame);
+olBtn.addEventListener('touchend', (e) => { e.preventDefault(); startGame(); });
+
+// ── Player input ──
+function clearButtonEffects() {
+  buttons.forEach(b => { b.classList.remove('correct', 'wrong', 'pressed'); });
+}
+
+function handleAction(action) {
+  if (state !== 'running') return;
+
+  // Find the nearest unacted obstacle within the action window
+  let target = null;
+  for (const obs of obstacles) {
+    if (obs.acted || obs.passed) continue;
+    const dist = obs.x - MANO_X;
+    if (dist < ACTION_WINDOW && dist > -30) {
+      target = obs;
+      break;
+    }
+  }
+
+  if (!target) {
+    // pressed too early or no obstacle near – wrong
+    flashButton(action, false);
+    die();
     return;
   }
 
-  // Place selected tool
-  placedTools = placedTools.filter(p => p.type !== selectedTool);
-  placedTools.push({ type: selectedTool, x: px, y: py });
-  selectedTool = null;
-  syncTrayUI();
-});
-
-cvs.addEventListener('pointermove', e => {
-  if (phase !== PHASE.PLACE || !selectedTool) { pointerPos = null; return; }
-  const rect = cvs.getBoundingClientRect();
-  pointerPos = {
-    x: (e.clientX - rect.left) * (W / rect.width),
-    y: (e.clientY - rect.top)  * (H / rect.height),
-  };
-});
-cvs.addEventListener('pointerleave', () => { pointerPos = null; });
-
-// ── Start run ──
-function startRun() {
-  if (phase !== PHASE.PLACE) return;
-  phase = PHASE.RUN;
-  mano.walking = true;
-  setMood('run');
-  const go = $('go-btn');
-  if (go) go.classList.add('disabled');
+  const valid = VALID_ACTIONS[target.type];
+  if (valid.includes(action)) {
+    // correct!
+    target.acted = true;
+    actionType = action;
+    actionSuccess = true;
+    actionTimer = 40;
+    state = 'acting';
+    flashButton(action, true);
+  } else {
+    // wrong action
+    flashButton(action, false);
+    die();
+  }
 }
 
-// ── Init level ──
-function initLevel() {
-  phase = PHASE.PLACE;
-  selectedTool = null;
-  pointerPos = null;
-  const def = getLevelDef(level);
-
-  const count = def.obs.length;
-  obstacles = def.obs.map((o, i) => {
-    const spread = count > 1 ? i / (count - 1) : 0;
-    const frac = 0.32 + spread * 0.38;
-    const w = obsW(o.type);
-    const h = obsH(o.type);
-    return { type: o.type, x: Math.round(W * frac), w, h, cleared: false };
+function flashButton(action, success) {
+  clearButtonEffects();
+  buttons.forEach(b => {
+    if (b.dataset.action === action) {
+      b.classList.add(success ? 'correct' : 'wrong');
+    }
   });
-
-  availableTools = def.tools.slice();
-  placedTools = [];
-
-  mano = {
-    x: 50, y: groundY, baseY: groundY,
-    vy: 0, walking: false, onGround: true,
-    angry: false, happy: false,
-    frame: 0, shakeTimer: 0,
-  };
-
-  $('retry-btn').style.display = 'none';
-  $('next-btn').style.display  = 'none';
-  buildTray();
-  updateHUD();
-  setMood('place');
+  setTimeout(clearButtonEffects, 400);
 }
 
-// ── Physics ──
-function updateRun() {
-  const speed = 1.8 + level * 0.12;
-  const gravity = 0.38;
-
-  mano.x += speed;
-  mano.frame += 0.16;
-
-  if (!mano.onGround) {
-    mano.vy += gravity;
-    mano.y += mano.vy;
-    if (mano.y >= groundY) {
-      mano.y = groundY;
-      mano.vy = 0;
-      mano.onGround = true;
-    }
-  }
-
-  checkInteractions();
-
-  if (mano.x > W + 30 && phase === PHASE.RUN) triggerSuccess();
+function die() {
+  state = 'dead';
+  deadTimer = 60;
 }
 
-/* ── Collision / tool interaction ── */
-function checkInteractions() {
-  const mx = mano.x;
-
-  for (const obs of obstacles) {
-    if (obs.cleared) continue;
-    const oL = obs.x - obs.w / 2;
-    const oR = obs.x + obs.w / 2;
-
-    // Not reached yet or already past
-    if (mx < oL - 6 || mx > oR + 6) continue;
-
-    // Helper: find a placed tool near the obstacle
-    const near = (toolType, xPad, yMin, yMax) =>
-      placedTools.find(p => p.type === toolType &&
-        p.x > oL - xPad && p.x < oR + xPad &&
-        p.y > yMin && p.y < yMax);
-
-    if (obs.type === OBS.GAP) {
-      const bridge = near(TOOL.BRIDGE, 25, groundY - 45, groundY + 20);
-      const ramp   = near(TOOL.RAMP,   45, groundY - 85, groundY + 15);
-      if (bridge) {
-        obs.cleared = true;
-      } else if (ramp) {
-        if (!obs._launched) { mano.vy = -6.5; mano.onGround = false; obs._launched = true; }
-        obs.cleared = true;
-      } else {
-        return triggerTantrum();
-      }
-    } else if (obs.type === OBS.WALL) {
-      const ramp  = near(TOOL.RAMP,       60, groundY - 85, groundY + 15);
-      const tramp = near(TOOL.TRAMPOLINE,  65, groundY - 45, groundY + 20);
-      if ((ramp || tramp) && mano.onGround) {
-        mano.vy = tramp ? -10 : -8.5;
-        mano.onGround = false;
-        obs.cleared = true;
-      } else if (!mano.onGround && mano.y < groundY - obs.h + 12) {
-        obs.cleared = true;
-      } else if (mano.onGround) {
-        return triggerTantrum();
-      }
-    } else if (obs.type === OBS.PIT) {
-      const bucket = near(TOOL.BUCKET, 20, groundY - 15, groundY + 70);
-      const ramp   = near(TOOL.RAMP,  55, groundY - 85, groundY + 15);
-      if (bucket) {
-        obs.cleared = true;
-      } else if (ramp) {
-        if (!obs._launched) { mano.vy = -7; mano.onGround = false; obs._launched = true; }
-        obs.cleared = true;
-      } else {
-        return triggerTantrum();
-      }
-    }
-  }
-}
-
-// ── Success ──
-function triggerSuccess() {
-  phase = PHASE.SUCCESS;
-  mano.happy = true;
-  mano.walking = false;
-  mano.x = W * 0.6;
-  setMood('success');
-
-  const unused = availableTools.length - placedTools.length;
-  let pts = 100 + unused * 50;
-  if (firstTry) pts += 75;
-  score += pts;
-  if (score > bestScore) bestScore = score;
-  updateHUD();
-
-  successTimer = 0;
-  $('next-btn').style.display = 'block';
-}
-
-function updateSuccess() { mano.frame += 0.2; }
-
-$('next-btn').addEventListener('pointerdown', () => {
-  $('next-btn').style.display = 'none';
-  level++;
-  firstTry = true;
-  initLevel();
+// Button events (both touch and mouse)
+buttons.forEach(btn => {
+  const action = btn.dataset.action;
+  btn.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    btn.classList.add('pressed');
+    handleAction(action);
+  });
+  btn.addEventListener('pointerup', () => btn.classList.remove('pressed'));
+  btn.addEventListener('pointerleave', () => btn.classList.remove('pressed'));
 });
 
-// ── Tantrum ──
-function triggerTantrum() {
-  phase = PHASE.TANTRUM;
-  mano.walking = false;
-  mano.angry = true;
-  mano.vy = 0;
-  mano.onGround = true;
-  mano.y = groundY;
-  setMood('tantrum');
-  tantrumTimer = 1200;
-  lives--;
-  firstTry = false;
-  updateHUD();
-}
-
-function updateTantrum(dt) {
-  tantrumTimer -= dt;
-  mano.shakeTimer += dt;
-  if (tantrumTimer <= 0) {
-    if (lives <= 0) triggerGameOver();
-    else $('retry-btn').style.display = 'block';
+// Keyboard support
+const KEY_MAP = { '1': 'bridge', '2': 'trampoline', '3': 'ladder', '4': 'duck',
+                  'a': 'bridge', 's': 'trampoline', 'd': 'ladder', 'f': 'duck' };
+document.addEventListener('keydown', (e) => {
+  const action = KEY_MAP[e.key.toLowerCase()];
+  if (action) handleAction(action);
+  if (e.key === ' ' || e.key === 'Enter') {
+    if (state === 'menu') startGame();
   }
-}
-
-$('retry-btn').addEventListener('pointerdown', () => {
-  $('retry-btn').style.display = 'none';
-  initLevel();
 });
 
-// ── Game over ──
-function triggerGameOver() {
-  phase = PHASE.GAMEOVER;
-  $('ov-score').textContent  = 'Score: ' + score;
-  $('ov-levels').textContent = 'Levels completed: ' + (level - 1);
-  $('ov-best').textContent   = 'Best: ' + bestScore;
-  $('overlay').style.display = 'flex';
+// ── Drawing helpers ──
+const LINE_COLOR = '#e0e0e0';
+const BG_GRAD_TOP = '#16213e';
+const BG_GRAD_BOT = '#0f3460';
+
+function drawBackground() {
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, BG_GRAD_TOP);
+  grad.addColorStop(1, BG_GRAD_BOT);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
 }
 
-$('play-again-btn').addEventListener('pointerdown', () => {
-  $('overlay').style.display = 'none';
-  startGame();
-});
-
-// ══════════════════════════════════
-// DRAWING
-// ══════════════════════════════════
-
-function draw() {
-  ctx.clearRect(0, 0, W, H);
-
-  drawGroundLine();
-  obstacles.forEach(drawObstacle);
-  placedTools.forEach(drawPlacedTool);
-  drawMano();
-
-  // Ghost preview while placing
-  if (phase === PHASE.PLACE && selectedTool && pointerPos) {
-    ctx.globalAlpha = 0.35;
-    drawPlacedTool({ type: selectedTool, x: pointerPos.x, y: pointerPos.y });
-    ctx.globalAlpha = 1;
-  }
-}
-
-function drawGroundLine() {
-  // Build segments, cutting out gaps / pits
-  let segs = [{ a: 0, b: W }];
-  for (const o of obstacles) {
-    if (o.type === OBS.GAP || o.type === OBS.PIT) {
-      const oL = o.x - o.w / 2, oR = o.x + o.w / 2;
-      let next = [];
-      for (const s of segs) {
-        if (oL >= s.b || oR <= s.a) { next.push(s); continue; }
-        if (s.a < oL) next.push({ a: s.a, b: oL });
-        if (s.b > oR) next.push({ a: oR, b: s.b });
-      }
-      segs = next;
-    }
-  }
-  ctx.strokeStyle = '#333';
-  ctx.lineWidth = 2.5;
+function drawGround() {
+  ctx.strokeStyle = LINE_COLOR;
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
   ctx.beginPath();
-  segs.forEach(s => { ctx.moveTo(s.a, groundY); ctx.lineTo(s.b, groundY); });
+
+  // Draw ground line, skipping gaps
+  let x = 0;
+  const gapObs = obstacles.filter(o => o.type === 'gap');
+  // sort by x
+  const sortedGaps = gapObs.slice().sort((a, b) => a.x - b.x);
+
+  ctx.moveTo(0, groundY);
+  let prevX = 0;
+  for (const gap of sortedGaps) {
+    const gx1 = gap.x - GAP_WIDTH / 2;
+    const gx2 = gap.x + GAP_WIDTH / 2;
+    if (gx1 > prevX) {
+      ctx.lineTo(Math.max(gx1, 0), groundY);
+    }
+    if (gx2 > 0 && gx1 < W) {
+      ctx.moveTo(Math.min(Math.max(gx2, 0), W), groundY);
+    }
+    prevX = gx2;
+  }
+  ctx.lineTo(W, groundY);
   ctx.stroke();
-}
 
-function drawObstacle(obs) {
-  const cx = obs.x, w = obs.w, h = obs.h;
-  ctx.strokeStyle = '#333';
-  ctx.lineWidth = 2;
-
-  if (obs.type === OBS.GAP) {
-    ctx.setLineDash([5, 5]);
+  // Draw bridge over gaps if acted
+  for (const gap of sortedGaps) {
+    if (!gap.acted) continue;
+    const gx1 = gap.x - GAP_WIDTH / 2;
+    const gx2 = gap.x + GAP_WIDTH / 2;
+    ctx.strokeStyle = '#ffd54f';
+    ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.moveTo(cx - w/2, groundY); ctx.lineTo(cx - w/2, groundY + h);
-    ctx.moveTo(cx + w/2, groundY); ctx.lineTo(cx + w/2, groundY + h);
+    ctx.moveTo(gx1, groundY);
+    ctx.quadraticCurveTo(gap.x, groundY - 14, gx2, groundY);
     ctx.stroke();
-    ctx.setLineDash([]);
-  } else if (obs.type === OBS.WALL) {
-    ctx.fillStyle = 'rgba(0,0,0,0.04)';
-    ctx.fillRect(cx - w/2, groundY - h, w, h);
-    ctx.strokeRect(cx - w/2, groundY - h, w, h);
-    // hatching
-    ctx.lineWidth = 0.7;
-    for (let y = groundY - h + 8; y < groundY; y += 9) {
+    // planks
+    ctx.strokeStyle = '#ffd54f';
+    ctx.lineWidth = 1.5;
+    for (let px = gx1 + 8; px < gx2 - 4; px += 10) {
       ctx.beginPath();
-      ctx.moveTo(cx - w/2 + 2, y);
-      ctx.lineTo(cx + w/2 - 2, y + 5);
+      const t = (px - gx1) / GAP_WIDTH;
+      const py = groundY - Math.sin(t * Math.PI) * 14;
+      ctx.moveTo(px, py - 3);
+      ctx.lineTo(px, py + 3);
       ctx.stroke();
     }
-    ctx.lineWidth = 2;
-  } else if (obs.type === OBS.PIT) {
-    ctx.beginPath();
-    ctx.moveTo(cx - w/2, groundY);
-    ctx.lineTo(cx - w/2, groundY + h);
-    ctx.lineTo(cx + w/2, groundY + h);
-    ctx.lineTo(cx + w/2, groundY);
-    ctx.stroke();
-    // hatch
-    ctx.lineWidth = 0.6;
-    for (let i = 8; i < h; i += 9) {
-      ctx.beginPath();
-      ctx.moveTo(cx - w/2, groundY + i);
-      ctx.lineTo(cx - w/2 + i * 0.8, groundY);
-      ctx.stroke();
-    }
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = LINE_COLOR;
+    ctx.lineWidth = 3;
   }
 }
 
-function drawPlacedTool(p) {
-  ctx.strokeStyle = '#2080e0';
+function drawWall(obs) {
+  const wx = obs.x - WALL_WIDTH / 2;
+  ctx.fillStyle = '#555';
+  ctx.strokeStyle = LINE_COLOR;
+  ctx.lineWidth = 2.5;
+  ctx.fillRect(wx, groundY - WALL_HEIGHT, WALL_WIDTH, WALL_HEIGHT);
+  ctx.strokeRect(wx, groundY - WALL_HEIGHT, WALL_WIDTH, WALL_HEIGHT);
+
+  // Draw ladder or trampoline if acted
+  if (obs.acted) {
+    if (actionType === 'ladder') {
+      ctx.strokeStyle = '#ffd54f';
+      ctx.lineWidth = 2;
+      const lx = obs.x - WALL_WIDTH / 2 - 16;
+      // side rails
+      ctx.beginPath();
+      ctx.moveTo(lx, groundY);
+      ctx.lineTo(lx + 6, groundY - WALL_HEIGHT - 6);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(lx + 14, groundY);
+      ctx.lineTo(lx + 20, groundY - WALL_HEIGHT - 6);
+      ctx.stroke();
+      // rungs
+      for (let ry = groundY - 12; ry > groundY - WALL_HEIGHT - 4; ry -= 12) {
+        const t = (groundY - ry) / (WALL_HEIGHT + 6);
+        ctx.beginPath();
+        ctx.moveTo(lx + t * 6, ry);
+        ctx.lineTo(lx + 14 + t * 6, ry);
+        ctx.stroke();
+      }
+    } else if (actionType === 'trampoline') {
+      ctx.strokeStyle = '#ffd54f';
+      ctx.lineWidth = 2.5;
+      const tx = obs.x - WALL_WIDTH / 2 - 30;
+      // base
+      ctx.beginPath();
+      ctx.moveTo(tx, groundY);
+      ctx.lineTo(tx + 10, groundY - 16);
+      ctx.lineTo(tx + 30, groundY - 16);
+      ctx.lineTo(tx + 40, groundY);
+      ctx.stroke();
+      // surface
+      ctx.beginPath();
+      ctx.ellipse(tx + 20, groundY - 18, 18, 4, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  }
+}
+
+function drawBird(obs) {
+  const bx = obs.x;
+  const by = groundY - 50 + Math.sin(bx * 0.04) * 8;
+  const wingPhase = Math.sin(Date.now() * 0.012 + bx) * 12;
+  ctx.strokeStyle = '#e57373';
   ctx.lineWidth = 2.5;
   ctx.lineCap = 'round';
-
-  const x = p.x, y = p.y;
-  if (p.type === TOOL.BRIDGE) {
-    ctx.beginPath();
-    ctx.moveTo(x - 32, y); ctx.lineTo(x + 32, y); ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(x - 27, y); ctx.lineTo(x - 27, y + 10); ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(x + 27, y); ctx.lineTo(x + 27, y + 10); ctx.stroke();
-  } else if (p.type === TOOL.RAMP) {
-    ctx.beginPath();
-    ctx.moveTo(x - 28, y + 18);
-    ctx.lineTo(x + 16, y - 22);
-    ctx.lineTo(x + 16, y + 18);
-    ctx.closePath(); ctx.stroke();
-  } else if (p.type === TOOL.TRAMPOLINE) {
-    ctx.beginPath(); ctx.moveTo(x - 22, y + 12); ctx.lineTo(x - 22, y); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(x + 22, y + 12); ctx.lineTo(x + 22, y); ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(x - 24, y);
-    ctx.quadraticCurveTo(x, y + 14, x + 24, y);
-    ctx.stroke();
-  } else if (p.type === TOOL.BUCKET) {
-    ctx.beginPath();
-    ctx.moveTo(x - 16, y - 12);
-    ctx.lineTo(x - 20, y + 16);
-    ctx.lineTo(x + 20, y + 16);
-    ctx.lineTo(x + 16, y - 12);
-    ctx.stroke();
-  }
-}
-
-// ── Draw Manó ──
-function drawMano() {
-  const m = mano;
-  let dx = m.x, dy = m.y;
-
-  if (m.angry && phase === PHASE.TANTRUM) {
-    dx += Math.sin(m.shakeTimer * 0.06) * 5;
-  }
-  if (m.happy) {
-    dy -= Math.abs(Math.sin(m.frame * 0.9)) * 16;
-  }
-
-  ctx.save();
-  ctx.translate(dx, dy);
-
-  const facing = m.angry ? -1 : 1;
-  ctx.scale(facing, 1);
-
-  ctx.strokeStyle = '#333';
-  ctx.fillStyle   = '#333';
-  ctx.lineWidth   = 2.2;
-  ctx.lineCap     = 'round';
-  ctx.lineJoin    = 'round';
-
-  // Legs
-  const legSwing = m.walking ? Math.sin(m.frame * 3) * 12 : 0;
-  ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo(-6 + legSwing,  0); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo( 6 - legSwing,  0); ctx.stroke();
-
-  // Body
-  ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo(0, -42); ctx.stroke();
-
-  // Arms
-  if (m.angry) {
-    const w = Math.sin(m.shakeTimer * 0.05) * 16;
-    ctx.beginPath(); ctx.moveTo(0, -36); ctx.lineTo( 14, -42 + w); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(0, -36); ctx.lineTo(-14, -46 - w); ctx.stroke();
-  } else {
-    const a = m.walking ? Math.sin(m.frame * 3) * 9 : 0;
-    ctx.beginPath(); ctx.moveTo(0, -35); ctx.lineTo( 12 + a, -26); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(0, -35); ctx.lineTo(-12 - a, -26); ctx.stroke();
-  }
-
-  // Head
-  ctx.beginPath(); ctx.arc(0, -53, 11, 0, Math.PI * 2); ctx.stroke();
-
-  // Nose (prominent La Linea style)
+  // body
   ctx.beginPath();
-  ctx.moveTo(9, -55); ctx.lineTo(18, -52); ctx.lineTo(9, -49);
+  ctx.ellipse(bx, by, 12, 6, 0, 0, Math.PI * 2);
   ctx.stroke();
+  // wings
+  ctx.beginPath();
+  ctx.moveTo(bx - 4, by - 4);
+  ctx.quadraticCurveTo(bx - 10, by - 14 + wingPhase, bx - 18, by - 8 + wingPhase);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(bx + 4, by - 4);
+  ctx.quadraticCurveTo(bx + 10, by - 14 + wingPhase, bx + 18, by - 8 + wingPhase);
+  ctx.stroke();
+  // beak
+  ctx.beginPath();
+  ctx.moveTo(bx - 12, by - 1);
+  ctx.lineTo(bx - 20, by + 1);
+  ctx.stroke();
+  // eye
+  ctx.fillStyle = '#e57373';
+  ctx.beginPath();
+  ctx.arc(bx - 6, by - 2, 1.5, 0, Math.PI * 2);
+  ctx.fill();
+}
 
-  // Eye
-  if (m.angry) {
-    ctx.beginPath(); ctx.arc(3, -55, 1.6, 0, Math.PI * 2); ctx.fill();
-    // angry eyebrow
-    ctx.beginPath(); ctx.moveTo(-1, -59); ctx.lineTo(7, -57); ctx.stroke();
-    // frown
-    ctx.beginPath(); ctx.moveTo(-3, -46); ctx.lineTo(5, -47); ctx.stroke();
-  } else if (m.happy) {
-    ctx.beginPath(); ctx.arc(3, -55, 1.6, 0, Math.PI * 2); ctx.fill();
-    // smile
-    ctx.beginPath(); ctx.arc(2, -48, 4.5, 0.1, Math.PI - 0.1); ctx.stroke();
+// ── Draw Mano (La Linea style) ──
+function drawMano() {
+  const mx = MANO_X;
+  const baseY = groundY + manoY;
+  const walkCycle = Math.sin(manoAnim * 0.15);
+  const isDucking = manoSquish || (state === 'acting' && actionType === 'duck');
+
+  ctx.strokeStyle = LINE_COLOR;
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  if (isDucking) {
+    // Ducking pose – squished down
+    const duckY = baseY;
+    // body (hunched)
+    ctx.beginPath();
+    ctx.moveTo(mx, duckY);         // feet
+    ctx.lineTo(mx, duckY - 14);    // short legs
+    ctx.quadraticCurveTo(mx + 6, duckY - 20, mx + 2, duckY - 24); // hunched body
+    ctx.stroke();
+    // head (lower)
+    ctx.beginPath();
+    ctx.arc(mx + 2, duckY - 30, 7, 0, Math.PI * 2);
+    ctx.stroke();
+    // nose
+    ctx.beginPath();
+    ctx.moveTo(mx + 9, duckY - 31);
+    ctx.lineTo(mx + 16, duckY - 33);
+    ctx.stroke();
   } else {
-    ctx.beginPath(); ctx.arc(3, -55, 1.6, 0, Math.PI * 2); ctx.fill();
+    // Normal walking Mano
+    const bodyTop = baseY - 50;
+    const hipY = baseY - 18;
+
+    // Legs with walk animation
+    ctx.beginPath();
+    ctx.moveTo(mx - 6 + walkCycle * 5, baseY);
+    ctx.lineTo(mx, hipY);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(mx + 6 - walkCycle * 5, baseY);
+    ctx.lineTo(mx, hipY);
+    ctx.stroke();
+
+    // Body
+    ctx.beginPath();
+    ctx.moveTo(mx, hipY);
+    ctx.lineTo(mx, bodyTop);
+    ctx.stroke();
+
+    // Arms with swing
+    ctx.beginPath();
+    ctx.moveTo(mx, bodyTop + 12);
+    ctx.lineTo(mx - 10 - walkCycle * 4, bodyTop + 22);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(mx, bodyTop + 12);
+    ctx.lineTo(mx + 10 + walkCycle * 4, bodyTop + 22);
+    ctx.stroke();
+
+    // Head
+    ctx.beginPath();
+    ctx.arc(mx, bodyTop - 8, 9, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Big La Linea nose
+    ctx.beginPath();
+    ctx.moveTo(mx + 8, bodyTop - 10);
+    ctx.lineTo(mx + 18, bodyTop - 12);
+    ctx.lineTo(mx + 12, bodyTop - 6);
+    ctx.stroke();
+
+    // Eye
+    ctx.fillStyle = LINE_COLOR;
+    ctx.beginPath();
+    ctx.arc(mx + 3, bodyTop - 11, 1.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function drawHUD() {
+  ctx.fillStyle = '#ffd54f';
+  ctx.font = 'bold 22px "Segoe UI", sans-serif';
+  ctx.textAlign = 'right';
+  ctx.fillText('Score: ' + score, W - 16, 32);
+
+  ctx.fillStyle = '#888';
+  ctx.font = '15px "Segoe UI", sans-serif';
+  ctx.fillText('Best: ' + best, W - 16, 52);
+
+  // Speed indicator
+  ctx.fillStyle = '#555';
+  ctx.textAlign = 'left';
+  ctx.font = '13px "Segoe UI", sans-serif';
+  ctx.fillText('Speed: ' + speed.toFixed(1) + 'x', 12, 28);
+}
+
+function drawDeathEffect() {
+  if (state !== 'dead') return;
+  const alpha = deadTimer / 60;
+  ctx.fillStyle = `rgba(255,0,0,${alpha * 0.3})`;
+  ctx.fillRect(0, 0, W, H);
+
+  // Mano tantrum squiggles
+  ctx.strokeStyle = `rgba(255,200,200,${alpha})`;
+  ctx.lineWidth = 2;
+  for (let i = 0; i < 6; i++) {
+    const angle = (i / 6) * Math.PI * 2 + Date.now() * 0.01;
+    const r = 20 + (60 - deadTimer) * 0.8;
+    ctx.beginPath();
+    ctx.moveTo(MANO_X + Math.cos(angle) * r, groundY - 30 + Math.sin(angle) * r);
+    ctx.lineTo(MANO_X + Math.cos(angle) * (r + 10), groundY - 30 + Math.sin(angle) * (r + 10));
+    ctx.stroke();
+  }
+}
+
+// ── Action animations ──
+function updateAction() {
+  if (state !== 'acting') return;
+  actionTimer--;
+
+  if (actionType === 'trampoline' || actionType === 'ladder') {
+    // Arc over wall
+    const t = 1 - actionTimer / 40;
+    manoY = -Math.sin(t * Math.PI) * (WALL_HEIGHT + 20);
+  } else if (actionType === 'duck') {
+    manoSquish = true;
+  } else if (actionType === 'bridge') {
+    // slight dip then up crossing gap
+    const t = 1 - actionTimer / 40;
+    manoY = -Math.sin(t * Math.PI) * 6;
   }
 
-  ctx.restore();
+  if (actionTimer <= 0) {
+    state = 'running';
+    actionType = '';
+    manoY = 0;
+    manoSquish = false;
+    score++;
+    speed = Math.min(MAX_SPEED, BASE_SPEED + score * SPEED_INC);
+  }
 }
 
-// ══════════════════════════════════
-// MAIN LOOP
-// ══════════════════════════════════
+// ── Collision check ──
+function checkCollision() {
+  for (const obs of obstacles) {
+    if (obs.acted || obs.passed) continue;
+    // Did the obstacle reach Mano without being acted on?
+    if (obs.type === 'gap') {
+      const gx1 = obs.x - GAP_WIDTH / 2;
+      const gx2 = obs.x + GAP_WIDTH / 2;
+      if (MANO_X > gx1 && MANO_X < gx2) {
+        die();
+        return;
+      }
+    } else if (obs.type === 'wall') {
+      if (Math.abs(obs.x - MANO_X) < WALL_WIDTH / 2 + 8) {
+        die();
+        return;
+      }
+    } else if (obs.type === 'bird') {
+      if (Math.abs(obs.x - MANO_X) < 18) {
+        die();
+        return;
+      }
+    }
+  }
+}
 
-function tick(ts) {
-  if (!lastTime) lastTime = ts;
-  const dt = Math.min(ts - lastTime, 33);
-  lastTime = ts;
+// ── Main game loop ──
+function update() {
+  if (state === 'running' || state === 'acting') {
+    manoAnim++;
 
-  if (phase === PHASE.RUN)     updateRun();
-  if (phase === PHASE.TANTRUM) updateTantrum(dt);
-  if (phase === PHASE.SUCCESS) updateSuccess();
+    // Move obstacles
+    for (const obs of obstacles) {
+      obs.x -= speed;
+    }
 
+    // Mark passed
+    for (const obs of obstacles) {
+      if (!obs.passed && obs.x < MANO_X - 60) {
+        obs.passed = true;
+        if (!obs.acted && state === 'running') {
+          // They somehow slipped through (shouldn't happen with collision)
+        }
+      }
+    }
+
+    // Remove off-screen
+    obstacles = obstacles.filter(o => o.x > -100);
+
+    // Spawn new
+    nextObsDist -= speed;
+    if (nextObsDist <= 0) {
+      spawnObstacle();
+    }
+
+    // Update action
+    updateAction();
+
+    // Check collision (only in running state)
+    if (state === 'running') {
+      checkCollision();
+    }
+  }
+
+  if (state === 'dead') {
+    deadTimer--;
+    if (deadTimer <= 0) {
+      showMenu(true);
+    }
+  }
+}
+
+function draw() {
+  drawBackground();
+  drawGround();
+
+  // Draw obstacles
+  for (const obs of obstacles) {
+    if (obs.type === 'wall') drawWall(obs);
+    if (obs.type === 'bird') drawBird(obs);
+    // gaps are drawn by the ground line logic
+  }
+
+  drawMano();
+  drawHUD();
+  drawDeathEffect();
+}
+
+function loop() {
+  resize(); // handle dynamic resize
+  update();
   draw();
-  animId = requestAnimationFrame(tick);
+  requestAnimationFrame(loop);
 }
 
-// ── Start ──
-function startGame() {
-  score = 0; lives = 3; level = 1; firstTry = true;
-  lastTime = 0;
-  $('retry-btn').style.display = 'none';
-  $('next-btn').style.display  = 'none';
-  $('overlay').style.display   = 'none';
-  resize();
-  initLevel();
-  if (animId) cancelAnimationFrame(animId);
-  animId = requestAnimationFrame(tick);
-}
-
-startGame();
+// ── Init ──
+showMenu(false);
+loop();
 </script>
 </body>
 </html>
