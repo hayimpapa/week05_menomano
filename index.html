@@ -1,603 +1,729 @@
-<!-- Week 5 - Draw the Line (Menő Manó) -->
+<!-- Week 05 - Obstacle Sculptor (Menő Manó) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Draw the Line — Menő Manó</title>
+<title>Obstacle Sculptor — Menő Manó</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body {
-    width: 100%; height: 100%;
-    overflow: hidden;
-    touch-action: none;
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    user-select: none;
-    font-family: 'Courier New', monospace;
-  }
-  canvas {
-    display: block;
-    width: 100%; height: 100%;
-  }
-  #gameOver {
-    display: none;
-    position: fixed; inset: 0;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 10;
-  }
-  #gameOver.visible { display: flex; }
-  #gameOver .card {
-    background: #fff;
-    border: 3px solid #000;
-    border-radius: 12px;
-    padding: 40px 48px;
-    text-align: center;
-    max-width: 320px;
-  }
-  #gameOver h1 { font-size: 28px; margin-bottom: 12px; }
-  #gameOver .scores { font-size: 18px; margin-bottom: 24px; line-height: 1.8; }
-  #gameOver button {
-    font-family: 'Courier New', monospace;
-    font-size: 20px; font-weight: bold;
-    background: #fff; color: #000;
-    border: 3px solid #000;
-    border-radius: 8px;
-    padding: 14px 36px;
-    cursor: pointer;
-    transition: background 0.15s;
-  }
-  #gameOver button:hover, #gameOver button:active {
-    background: #000; color: #fff;
-  }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  transition: background 0.4s;
+}
+#wrap {
+  display: flex; flex-direction: column;
+  width: 100%; height: 100%;
+  transition: background 0.4s;
+}
+#hud {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 14px; font-size: 14px; color: #333;
+  background: rgba(255,255,255,0.5); z-index: 2;
+  min-height: 38px; flex-shrink: 0;
+}
+#hud .lives { display: flex; gap: 6px; min-width: 80px; }
+#hud .score-area { text-align: center; flex: 1; }
+#hud .score-area .main { font-weight: 700; font-size: 16px; }
+#hud .score-area .sub  { font-size: 11px; color: #888; }
+#hud .level-area { min-width: 80px; text-align: right; font-weight: 700; }
+canvas { flex: 1; display: block; cursor: crosshair; }
+#tray {
+  display: flex; align-items: center; justify-content: center;
+  gap: 10px; padding: 8px 12px;
+  background: rgba(245,245,240,0.95); border-top: 2px solid #ccc;
+  min-height: 68px; z-index: 2; flex-shrink: 0;
+}
+.tool-btn {
+  width: 62px; height: 56px; border: 2.5px solid #666;
+  border-radius: 10px; background: #fff; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; font-size: 10px; font-weight: 700;
+  color: #444; gap: 2px; position: relative;
+  transition: all 0.15s;
+}
+.tool-btn:active { transform: scale(0.95); }
+.tool-btn.selected { border-color: #2080e0; background: #dceeff; box-shadow: 0 0 0 2px #2080e0; }
+.tool-btn.used { opacity: 0.3; pointer-events: none; }
+.tool-btn canvas { width: 38px; height: 24px; flex: none; pointer-events: none; }
+#go-btn {
+  width: 72px; height: 56px; border: 2.5px solid #2a7a2a;
+  border-radius: 12px; background: #4caf50; color: #fff;
+  font-size: 18px; font-weight: 800; cursor: pointer;
+  letter-spacing: 2px; transition: all 0.15s;
+}
+#go-btn:active { background: #388e3c; transform: scale(0.95); }
+#go-btn.disabled { background: #bbb; border-color: #999; pointer-events: none; }
+.popup-btn {
+  display: none; position: fixed; left: 50%; transform: translateX(-50%);
+  padding: 14px 40px; font-size: 18px; font-weight: 700;
+  border: 2.5px solid #555; border-radius: 14px; cursor: pointer;
+  z-index: 10; background: #fff; color: #333;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  transition: all 0.15s;
+}
+.popup-btn:active { transform: translateX(-50%) scale(0.95); }
+#retry-btn { bottom: 110px; }
+#next-btn  { bottom: 110px; }
+#overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6); z-index: 20;
+  flex-direction: column; align-items: center; justify-content: center;
+  color: #fff; text-align: center;
+}
+#overlay .card {
+  background: #fff; color: #333; border-radius: 16px;
+  padding: 36px 44px; max-width: 320px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.3);
+}
+#overlay h1 { font-size: 28px; margin-bottom: 12px; }
+#overlay p  { font-size: 17px; margin-bottom: 6px; line-height: 1.6; }
+#overlay button {
+  margin-top: 20px; padding: 14px 44px; font-size: 18px;
+  font-weight: 700; border: 2.5px solid #2a7a2a; border-radius: 14px;
+  background: #4caf50; color: #fff; cursor: pointer;
+}
+#overlay button:active { background: #388e3c; }
 </style>
 </head>
 <body>
-<canvas id="c"></canvas>
-<div id="gameOver">
+<div id="wrap">
+  <div id="hud">
+    <div class="lives" id="lives"></div>
+    <div class="score-area">
+      <div class="main" id="score-display">Score: 0</div>
+      <div class="sub" id="best-display">Best: 0</div>
+    </div>
+    <div class="level-area" id="level-display">Level 1</div>
+  </div>
+  <canvas id="c"></canvas>
+  <div id="tray"></div>
+</div>
+<button class="popup-btn" id="retry-btn">Try Again</button>
+<button class="popup-btn" id="next-btn">Next Level</button>
+<div id="overlay">
   <div class="card">
     <h1>Game Over</h1>
-    <div class="scores">
-      <div>Score: <span id="finalScore">0</span></div>
-      <div>Best: <span id="finalBest">0</span></div>
-    </div>
-    <button id="restartBtn">Draw Again</button>
+    <p id="ov-score"></p>
+    <p id="ov-levels"></p>
+    <p id="ov-best"></p>
+    <button id="play-again-btn">Play Again</button>
   </div>
 </div>
 <script>
 'use strict';
 
-const canvas = document.getElementById('c');
-const ctx = canvas.getContext('2d');
-const gameOverEl = document.getElementById('gameOver');
-const finalScoreEl = document.getElementById('finalScore');
-const finalBestEl = document.getElementById('finalBest');
-const restartBtn = document.getElementById('restartBtn');
+/* ═══════════════════════════════════════════
+   OBSTACLE SCULPTOR — Menő Manó
+   ═══════════════════════════════════════════ */
 
-/* ── Sizing ── */
-let W, H;
-function resize() {
-  W = canvas.width = window.innerWidth * devicePixelRatio;
-  H = canvas.height = window.innerHeight * devicePixelRatio;
-  ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
-}
-window.addEventListener('resize', resize);
-resize();
-/* logical width/height helpers */
-function lw() { return window.innerWidth; }
-function lh() { return window.innerHeight; }
+// ── Enums ──
+const TOOL  = { BRIDGE:'bridge', RAMP:'ramp', TRAMPOLINE:'trampoline', BUCKET:'bucket' };
+const OBS   = { GAP:'gap', WALL:'wall', PIT:'pit' };
+const PHASE = { PLACE:0, RUN:1, SUCCESS:2, TANTRUM:3, GAMEOVER:4 };
 
-/* ── Constants ── */
-const WALK_SPEED = 1.8;        // px per frame
-const GROUND_Y_RATIO = 0.65;   // default ground height
-const LINE_THICK = 3;
-const MANO_SIZE = 28;
-const OBSTACLE_MIN_GAP = 280;  // min px between obstacles
-const SCORE_WALK_INTERVAL = 60; // frames per score tick while walking
-const OBSTACLE_BONUS = 25;
-
-/* ── Mood colours ── */
-const MOOD = {
-  happy:   '#D0E8FF',
-  waiting: '#FFF5CC',
-  tantrum: '#FFD0CC'
+const MOOD_COL = {
+  place:   '#FFFDF0',
+  run:     '#FFF5CC',
+  success: '#C0E0FF',
+  tantrum: '#FFD0CC',
 };
 
-/* ── Game state ── */
-let state; // 'playing' | 'over'
-let score, bestScore, scoreTimer;
-let mano; // { x, y, vy, mood, frame, stuckTimer, onGround }
-let cameraX; // world X offset (scrolls left)
-let drawnPath; // array of {x, y} in world coords — the ground the player draws
-let obstacles; // array of obstacle objects
-let nextObstacleX;
-let obstacleInterval;
-let difficulty; // increases with score
+// ── DOM refs ──
+const $ = id => document.getElementById(id);
+const cvs = $('c');
+const ctx  = cvs.getContext('2d');
 
-function init() {
-  state = 'playing';
-  score = 0;
-  scoreTimer = 0;
-  bestScore = parseInt(localStorage.getItem('mano_best') || '0', 10);
-  difficulty = 0;
+// ── Layout ──
+let W, H, groundY;
+const LINE_Y_RATIO = 0.68;
 
-  const groundY = lh() * GROUND_Y_RATIO;
+function resize() {
+  const hud  = $('hud');
+  const tray = $('tray');
+  const wrapH = window.innerHeight;
+  W = cvs.width  = window.innerWidth;
+  H = cvs.height = wrapH - hud.offsetHeight - tray.offsetHeight;
+  groundY = Math.round(H * LINE_Y_RATIO);
+}
+window.addEventListener('resize', resize);
 
-  /* seed an initial flat path so Manó has somewhere to stand */
-  drawnPath = [];
-  for (let x = -100; x <= lw() * 0.45; x += 4) {
-    drawnPath.push({ x: x, y: groundY });
+// ── Game state ──
+let phase, score, bestScore = 0, lives, level, firstTry;
+let mano, obstacles, availableTools, placedTools, selectedTool;
+let animId, lastTime, tantrumTimer, successTimer;
+let pointerPos = null;
+
+// ── Level catalogue ──
+const LEVELS = [
+  // 1-3: single obstacle, 3 tools (tutorial)
+  { obs:[{type:OBS.GAP}],  tools:[TOOL.BRIDGE, TOOL.RAMP, TOOL.TRAMPOLINE] },
+  { obs:[{type:OBS.WALL}], tools:[TOOL.RAMP, TOOL.TRAMPOLINE, TOOL.BRIDGE] },
+  { obs:[{type:OBS.PIT}],  tools:[TOOL.BUCKET, TOOL.RAMP, TOOL.BRIDGE] },
+  // 4-6: two obstacles, 3 tools
+  { obs:[{type:OBS.GAP},{type:OBS.WALL}],  tools:[TOOL.BRIDGE, TOOL.RAMP, TOOL.TRAMPOLINE] },
+  { obs:[{type:OBS.WALL},{type:OBS.PIT}],  tools:[TOOL.TRAMPOLINE, TOOL.BUCKET, TOOL.RAMP] },
+  { obs:[{type:OBS.GAP},{type:OBS.PIT}],   tools:[TOOL.BRIDGE, TOOL.BUCKET, TOOL.RAMP] },
+  // 7+: two/three obstacles, 2 tools (hard)
+  { obs:[{type:OBS.GAP},{type:OBS.WALL}],               tools:[TOOL.RAMP, TOOL.TRAMPOLINE] },
+  { obs:[{type:OBS.WALL},{type:OBS.PIT},{type:OBS.GAP}], tools:[TOOL.RAMP, TOOL.TRAMPOLINE] },
+  { obs:[{type:OBS.PIT},{type:OBS.GAP}],                 tools:[TOOL.RAMP, TOOL.BRIDGE] },
+  { obs:[{type:OBS.WALL},{type:OBS.GAP},{type:OBS.PIT}], tools:[TOOL.TRAMPOLINE, TOOL.BUCKET] },
+];
+
+function getLevelDef(n) {
+  return JSON.parse(JSON.stringify(LEVELS[(n - 1) % LEVELS.length]));
+}
+
+// ── Obstacle dimensions ──
+function obsW(t) { return t === OBS.WALL ? 28 : 65; }
+function obsH(t) { return t === OBS.WALL ? 65 : t === OBS.PIT ? 55 : 22; }
+
+// ── Mood ──
+function setMood(key) {
+  const c = MOOD_COL[key] || MOOD_COL.place;
+  document.body.style.background = c;
+  $('wrap').style.background = c;
+}
+
+// ── HUD ──
+function updateHUD() {
+  $('score-display').textContent = 'Score: ' + score;
+  $('best-display').textContent  = 'Best: ' + bestScore;
+  $('level-display').textContent = 'Level ' + level;
+  let html = '';
+  for (let i = 0; i < 3; i++) {
+    const op = i < lives ? 1 : 0.18;
+    html += `<svg width="24" height="24" viewBox="0 0 24 24" style="opacity:${op}">
+      <circle cx="12" cy="11" r="8" fill="none" stroke="#333" stroke-width="1.5"/>
+      <circle cx="10" cy="10" r="1.2" fill="#333"/>
+      <line x1="14" y1="9" x2="18" y2="10" stroke="#333" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M9 15 Q12 17 15 15" fill="none" stroke="#333" stroke-width="1"/>
+    </svg>`;
   }
-
-  mano = {
-    x: 60,
-    y: groundY - 1,
-    vy: 0,
-    mood: 'happy',
-    frame: 0,
-    stuckTimer: 0,
-    onGround: true
-  };
-
-  cameraX = 0;
-  obstacles = [];
-  nextObstacleX = lw() * 1.2;
-  obstacleInterval = 400;
-
-  gameOverEl.classList.remove('visible');
-  gameOverEl.style.background = '';
+  $('lives').innerHTML = html;
 }
 
-/* ── Drawing input ── */
-let drawing = false;
-let lastDrawPt = null;
-
-function screenToWorld(sx, sy) {
-  return { x: sx + cameraX, y: sy };
+// ── Tool tray ──
+function buildTray() {
+  const tray = $('tray');
+  tray.innerHTML = '';
+  availableTools.forEach(t => {
+    const btn = document.createElement('button');
+    btn.className = 'tool-btn';
+    btn.dataset.tool = t;
+    const mc = document.createElement('canvas');
+    mc.width = 38; mc.height = 24;
+    drawToolIcon(mc.getContext('2d'), t, 38, 24);
+    btn.appendChild(mc);
+    const lbl = document.createElement('span');
+    lbl.textContent = t[0].toUpperCase() + t.slice(1);
+    btn.appendChild(lbl);
+    btn.addEventListener('pointerdown', e => { e.stopPropagation(); selectTool(t); });
+    tray.appendChild(btn);
+  });
+  const go = document.createElement('button');
+  go.id = 'go-btn';
+  go.textContent = 'GO';
+  go.addEventListener('pointerdown', e => { e.stopPropagation(); startRun(); });
+  tray.appendChild(go);
+  resize();          // recalc canvas height after tray rebuild
 }
 
-function canDrawAt(worldX) {
-  // only allow drawing ahead of Manó (with small grace zone)
-  return worldX > mano.x - 10;
+function drawToolIcon(c, type, w, h) {
+  c.strokeStyle = '#444'; c.lineWidth = 1.6; c.lineCap = 'round';
+  if (type === TOOL.BRIDGE) {
+    c.beginPath(); c.moveTo(3,h-5); c.lineTo(w-3,h-5); c.stroke();
+    c.beginPath(); c.moveTo(6,h-5); c.lineTo(6,h-1); c.stroke();
+    c.beginPath(); c.moveTo(w-6,h-5); c.lineTo(w-6,h-1); c.stroke();
+  } else if (type === TOOL.RAMP) {
+    c.beginPath(); c.moveTo(3,h-2); c.lineTo(w-3,4); c.lineTo(w-3,h-2); c.closePath(); c.stroke();
+  } else if (type === TOOL.TRAMPOLINE) {
+    c.beginPath(); c.moveTo(6,h-2); c.lineTo(6,h*0.45); c.stroke();
+    c.beginPath(); c.moveTo(w-6,h-2); c.lineTo(w-6,h*0.45); c.stroke();
+    c.beginPath(); c.moveTo(4,h*0.45); c.quadraticCurveTo(w/2,h*0.45+10,w-4,h*0.45); c.stroke();
+  } else if (type === TOOL.BUCKET) {
+    c.beginPath(); c.moveTo(8,3); c.lineTo(5,h-2); c.lineTo(w-5,h-2); c.lineTo(w-8,3); c.stroke();
+  }
 }
 
-function addDrawPoint(sx, sy) {
-  const wp = screenToWorld(sx, sy);
-  if (!canDrawAt(wp.x)) return;
+function selectTool(type) {
+  if (phase !== PHASE.PLACE) return;
+  // if this tool is already placed, remove it so player can re-place
+  const idx = placedTools.findIndex(p => p.type === type);
+  if (idx !== -1) placedTools.splice(idx, 1);
+  selectedTool = type;
+  syncTrayUI();
+}
 
-  if (lastDrawPt) {
-    const dx = wp.x - lastDrawPt.x;
-    const dy = wp.y - lastDrawPt.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    // interpolate for smooth lines
-    const steps = Math.max(1, Math.floor(dist / 3));
-    for (let i = 1; i <= steps; i++) {
-      const t = i / steps;
-      drawnPath.push({
-        x: lastDrawPt.x + dx * t,
-        y: lastDrawPt.y + dy * t
-      });
+function syncTrayUI() {
+  const used = new Set(placedTools.map(p => p.type));
+  document.querySelectorAll('.tool-btn').forEach(b => {
+    const t = b.dataset.tool;
+    b.classList.toggle('selected', t === selectedTool);
+    b.classList.toggle('used', used.has(t) && t !== selectedTool);
+  });
+}
+
+// ── Canvas interaction ──
+cvs.addEventListener('pointerdown', e => {
+  if (phase !== PHASE.PLACE) return;
+  const rect = cvs.getBoundingClientRect();
+  const px = (e.clientX - rect.left) * (W / rect.width);
+  const py = (e.clientY - rect.top)  * (H / rect.height);
+
+  // Tap on placed tool → remove it
+  if (!selectedTool) {
+    for (let i = placedTools.length - 1; i >= 0; i--) {
+      const p = placedTools[i];
+      if (Math.abs(px - p.x) < 32 && Math.abs(py - p.y) < 32) {
+        selectedTool = p.type;
+        placedTools.splice(i, 1);
+        syncTrayUI();
+        return;
+      }
     }
-  } else {
-    drawnPath.push(wp);
-  }
-  lastDrawPt = wp;
-}
-
-function onPointerDown(sx, sy) {
-  if (state !== 'playing') return;
-  drawing = true;
-  lastDrawPt = null;
-  addDrawPoint(sx, sy);
-}
-function onPointerMove(sx, sy) {
-  if (!drawing || state !== 'playing') return;
-  addDrawPoint(sx, sy);
-}
-function onPointerUp() {
-  drawing = false;
-  lastDrawPt = null;
-}
-
-/* Mouse events */
-canvas.addEventListener('mousedown', e => { e.preventDefault(); onPointerDown(e.clientX, e.clientY); });
-canvas.addEventListener('mousemove', e => { e.preventDefault(); onPointerMove(e.clientX, e.clientY); });
-canvas.addEventListener('mouseup', e => { e.preventDefault(); onPointerUp(); });
-canvas.addEventListener('mouseleave', () => onPointerUp());
-
-/* Touch events */
-canvas.addEventListener('touchstart', e => {
-  e.preventDefault();
-  const t = e.touches[0];
-  onPointerDown(t.clientX, t.clientY);
-}, { passive: false });
-canvas.addEventListener('touchmove', e => {
-  e.preventDefault();
-  const t = e.touches[0];
-  onPointerMove(t.clientX, t.clientY);
-}, { passive: false });
-canvas.addEventListener('touchend', e => { e.preventDefault(); onPointerUp(); }, { passive: false });
-canvas.addEventListener('touchcancel', e => { e.preventDefault(); onPointerUp(); }, { passive: false });
-
-/* Prevent scrolling */
-document.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
-
-/* ── Obstacles ── */
-function spawnObstacle() {
-  const groundY = lh() * GROUND_Y_RATIO;
-  const types = ['gap', 'wall', 'pit'];
-  const type = types[Math.floor(Math.random() * types.length)];
-  const obs = { type, x: nextObstacleX, passed: false };
-
-  switch (type) {
-    case 'gap':
-      obs.width = 60 + Math.random() * 40;
-      obs.y = groundY;
-      break;
-    case 'wall':
-      obs.width = 20 + Math.random() * 15;
-      obs.height = 50 + Math.random() * 40;
-      obs.y = groundY;
-      break;
-    case 'pit':
-      obs.width = 70 + Math.random() * 50;
-      obs.depth = 80 + Math.random() * 40;
-      obs.y = groundY;
-      break;
-  }
-
-  obstacles.push(obs);
-  // decrease interval as difficulty rises, min 160
-  obstacleInterval = Math.max(160, 400 - difficulty * 8);
-  nextObstacleX += obstacleInterval + obs.width + OBSTACLE_MIN_GAP * (0.6 + Math.random() * 0.4);
-}
-
-/* ── Find ground Y at a given world X ── */
-function getGroundY(worldX) {
-  // find the two path points surrounding worldX
-  if (drawnPath.length < 2) return null;
-
-  // Binary-ish search: path is mostly sorted by x
-  let best = null;
-  let bestDist = Infinity;
-  for (let i = 0; i < drawnPath.length - 1; i++) {
-    const a = drawnPath[i], b = drawnPath[i + 1];
-    if ((a.x <= worldX && b.x >= worldX) || (a.x >= worldX && b.x <= worldX)) {
-      const range = b.x - a.x;
-      if (Math.abs(range) < 0.01) continue;
-      const t = (worldX - a.x) / range;
-      const y = a.y + (b.y - a.y) * t;
-      const dist = Math.abs(t - 0.5);
-      if (dist < bestDist) { bestDist = dist; best = y; }
-    }
-  }
-  return best;
-}
-
-/* ── Update ── */
-function update() {
-  if (state !== 'playing') return;
-
-  difficulty = Math.floor(score / 50);
-
-  /* Spawn obstacles */
-  const aheadEdge = cameraX + lw() * 1.5;
-  if (nextObstacleX < aheadEdge) {
-    spawnObstacle();
-  }
-
-  /* Find ground ahead of Manó */
-  const lookAhead = mano.x + 4;
-  const groundY = getGroundY(lookAhead);
-
-  if (groundY !== null) {
-    // Ground exists ahead
-    mano.mood = 'happy';
-    mano.stuckTimer = 0;
-    mano.x += WALK_SPEED;
-    // Smoothly follow the ground Y
-    const targetY = getGroundY(mano.x);
-    if (targetY !== null) {
-      mano.y = targetY;
-      mano.vy = 0;
-      mano.onGround = true;
-    }
-  } else {
-    // No ground ahead — get stuck
-    mano.stuckTimer++;
-    if (mano.stuckTimer < 60) {
-      mano.mood = 'waiting';
-    } else {
-      mano.mood = 'tantrum';
-    }
-  }
-
-  /* Apply gravity if not on ground */
-  const currentGround = getGroundY(mano.x);
-  if (currentGround === null) {
-    // Manó is off the path — apply gravity
-    mano.vy += 0.35;
-    mano.y += mano.vy;
-    mano.onGround = false;
-    if (mano.mood === 'happy') mano.mood = 'waiting';
-  }
-
-  /* Falling off screen = game over */
-  if (mano.y > lh() + 60) {
-    gameOver();
     return;
   }
 
-  /* Camera follows Manó */
-  const targetCam = mano.x - lw() * 0.25;
-  cameraX += (targetCam - cameraX) * 0.08;
+  // Place selected tool
+  placedTools = placedTools.filter(p => p.type !== selectedTool);
+  placedTools.push({ type: selectedTool, x: px, y: py });
+  selectedTool = null;
+  syncTrayUI();
+});
 
-  /* Prune old path points behind camera */
-  const pruneX = cameraX - 80;
-  while (drawnPath.length > 2 && drawnPath[0].x < pruneX && drawnPath[1].x < pruneX) {
-    drawnPath.shift();
+cvs.addEventListener('pointermove', e => {
+  if (phase !== PHASE.PLACE || !selectedTool) { pointerPos = null; return; }
+  const rect = cvs.getBoundingClientRect();
+  pointerPos = {
+    x: (e.clientX - rect.left) * (W / rect.width),
+    y: (e.clientY - rect.top)  * (H / rect.height),
+  };
+});
+cvs.addEventListener('pointerleave', () => { pointerPos = null; });
+
+// ── Start run ──
+function startRun() {
+  if (phase !== PHASE.PLACE) return;
+  phase = PHASE.RUN;
+  mano.walking = true;
+  setMood('run');
+  const go = $('go-btn');
+  if (go) go.classList.add('disabled');
+}
+
+// ── Init level ──
+function initLevel() {
+  phase = PHASE.PLACE;
+  selectedTool = null;
+  pointerPos = null;
+  const def = getLevelDef(level);
+
+  const count = def.obs.length;
+  obstacles = def.obs.map((o, i) => {
+    const spread = count > 1 ? i / (count - 1) : 0;
+    const frac = 0.32 + spread * 0.38;
+    const w = obsW(o.type);
+    const h = obsH(o.type);
+    return { type: o.type, x: Math.round(W * frac), w, h, cleared: false };
+  });
+
+  availableTools = def.tools.slice();
+  placedTools = [];
+
+  mano = {
+    x: 50, y: groundY, baseY: groundY,
+    vy: 0, walking: false, onGround: true,
+    angry: false, happy: false,
+    frame: 0, shakeTimer: 0,
+  };
+
+  $('retry-btn').style.display = 'none';
+  $('next-btn').style.display  = 'none';
+  buildTray();
+  updateHUD();
+  setMood('place');
+}
+
+// ── Physics ──
+function updateRun() {
+  const speed = 1.8 + level * 0.12;
+  const gravity = 0.38;
+
+  mano.x += speed;
+  mano.frame += 0.16;
+
+  if (!mano.onGround) {
+    mano.vy += gravity;
+    mano.y += mano.vy;
+    if (mano.y >= groundY) {
+      mano.y = groundY;
+      mano.vy = 0;
+      mano.onGround = true;
+    }
   }
 
-  /* Prune old obstacles */
-  obstacles = obstacles.filter(o => o.x + (o.width || 0) > cameraX - 100);
+  checkInteractions();
 
-  /* Check obstacle passage for bonus */
+  if (mano.x > W + 30 && phase === PHASE.RUN) triggerSuccess();
+}
+
+/* ── Collision / tool interaction ── */
+function checkInteractions() {
+  const mx = mano.x;
+
   for (const obs of obstacles) {
-    if (!obs.passed && mano.x > obs.x + (obs.width || 0)) {
-      obs.passed = true;
-      score += OBSTACLE_BONUS;
+    if (obs.cleared) continue;
+    const oL = obs.x - obs.w / 2;
+    const oR = obs.x + obs.w / 2;
+
+    // Not reached yet or already past
+    if (mx < oL - 6 || mx > oR + 6) continue;
+
+    // Helper: find a placed tool near the obstacle
+    const near = (toolType, xPad, yMin, yMax) =>
+      placedTools.find(p => p.type === toolType &&
+        p.x > oL - xPad && p.x < oR + xPad &&
+        p.y > yMin && p.y < yMax);
+
+    if (obs.type === OBS.GAP) {
+      const bridge = near(TOOL.BRIDGE, 25, groundY - 45, groundY + 20);
+      const ramp   = near(TOOL.RAMP,   45, groundY - 85, groundY + 15);
+      if (bridge) {
+        obs.cleared = true;
+      } else if (ramp) {
+        if (!obs._launched) { mano.vy = -6.5; mano.onGround = false; obs._launched = true; }
+        obs.cleared = true;
+      } else {
+        return triggerTantrum();
+      }
+    } else if (obs.type === OBS.WALL) {
+      const ramp  = near(TOOL.RAMP,       60, groundY - 85, groundY + 15);
+      const tramp = near(TOOL.TRAMPOLINE,  65, groundY - 45, groundY + 20);
+      if ((ramp || tramp) && mano.onGround) {
+        mano.vy = tramp ? -10 : -8.5;
+        mano.onGround = false;
+        obs.cleared = true;
+      } else if (!mano.onGround && mano.y < groundY - obs.h + 12) {
+        obs.cleared = true;
+      } else if (mano.onGround) {
+        return triggerTantrum();
+      }
+    } else if (obs.type === OBS.PIT) {
+      const bucket = near(TOOL.BUCKET, 20, groundY - 15, groundY + 70);
+      const ramp   = near(TOOL.RAMP,  55, groundY - 85, groundY + 15);
+      if (bucket) {
+        obs.cleared = true;
+      } else if (ramp) {
+        if (!obs._launched) { mano.vy = -7; mano.onGround = false; obs._launched = true; }
+        obs.cleared = true;
+      } else {
+        return triggerTantrum();
+      }
     }
   }
+}
 
-  /* Score while walking */
-  if (mano.mood === 'happy') {
-    scoreTimer++;
-    if (scoreTimer >= SCORE_WALK_INTERVAL) {
-      score++;
-      scoreTimer = 0;
+// ── Success ──
+function triggerSuccess() {
+  phase = PHASE.SUCCESS;
+  mano.happy = true;
+  mano.walking = false;
+  mano.x = W * 0.6;
+  setMood('success');
+
+  const unused = availableTools.length - placedTools.length;
+  let pts = 100 + unused * 50;
+  if (firstTry) pts += 75;
+  score += pts;
+  if (score > bestScore) bestScore = score;
+  updateHUD();
+
+  successTimer = 0;
+  $('next-btn').style.display = 'block';
+}
+
+function updateSuccess() { mano.frame += 0.2; }
+
+$('next-btn').addEventListener('pointerdown', () => {
+  $('next-btn').style.display = 'none';
+  level++;
+  firstTry = true;
+  initLevel();
+});
+
+// ── Tantrum ──
+function triggerTantrum() {
+  phase = PHASE.TANTRUM;
+  mano.walking = false;
+  mano.angry = true;
+  mano.vy = 0;
+  mano.onGround = true;
+  mano.y = groundY;
+  setMood('tantrum');
+  tantrumTimer = 1200;
+  lives--;
+  firstTry = false;
+  updateHUD();
+}
+
+function updateTantrum(dt) {
+  tantrumTimer -= dt;
+  mano.shakeTimer += dt;
+  if (tantrumTimer <= 0) {
+    if (lives <= 0) triggerGameOver();
+    else $('retry-btn').style.display = 'block';
+  }
+}
+
+$('retry-btn').addEventListener('pointerdown', () => {
+  $('retry-btn').style.display = 'none';
+  initLevel();
+});
+
+// ── Game over ──
+function triggerGameOver() {
+  phase = PHASE.GAMEOVER;
+  $('ov-score').textContent  = 'Score: ' + score;
+  $('ov-levels').textContent = 'Levels completed: ' + (level - 1);
+  $('ov-best').textContent   = 'Best: ' + bestScore;
+  $('overlay').style.display = 'flex';
+}
+
+$('play-again-btn').addEventListener('pointerdown', () => {
+  $('overlay').style.display = 'none';
+  startGame();
+});
+
+// ══════════════════════════════════
+// DRAWING
+// ══════════════════════════════════
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+
+  drawGroundLine();
+  obstacles.forEach(drawObstacle);
+  placedTools.forEach(drawPlacedTool);
+  drawMano();
+
+  // Ghost preview while placing
+  if (phase === PHASE.PLACE && selectedTool && pointerPos) {
+    ctx.globalAlpha = 0.35;
+    drawPlacedTool({ type: selectedTool, x: pointerPos.x, y: pointerPos.y });
+    ctx.globalAlpha = 1;
+  }
+}
+
+function drawGroundLine() {
+  // Build segments, cutting out gaps / pits
+  let segs = [{ a: 0, b: W }];
+  for (const o of obstacles) {
+    if (o.type === OBS.GAP || o.type === OBS.PIT) {
+      const oL = o.x - o.w / 2, oR = o.x + o.w / 2;
+      let next = [];
+      for (const s of segs) {
+        if (oL >= s.b || oR <= s.a) { next.push(s); continue; }
+        if (s.a < oL) next.push({ a: s.a, b: oL });
+        if (s.b > oR) next.push({ a: oR, b: s.b });
+      }
+      segs = next;
     }
   }
-
-  mano.frame++;
-}
-
-function gameOver() {
-  state = 'over';
-  if (score > bestScore) {
-    bestScore = score;
-    localStorage.setItem('mano_best', String(bestScore));
-  }
-  finalScoreEl.textContent = score;
-  finalBestEl.textContent = bestScore;
-  gameOverEl.style.background = 'rgba(255,208,204,0.7)';
-  gameOverEl.classList.add('visible');
-}
-
-/* ── Drawing / Render ── */
-function drawBackground() {
-  let bg;
-  if (state === 'over') {
-    bg = MOOD.tantrum;
-  } else {
-    bg = MOOD[mano.mood] || MOOD.happy;
-  }
-  ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, lw(), lh());
-}
-
-function drawPath() {
-  if (drawnPath.length < 2) return;
-  ctx.save();
-  ctx.translate(-cameraX, 0);
+  ctx.strokeStyle = '#333';
+  ctx.lineWidth = 2.5;
   ctx.beginPath();
-  ctx.moveTo(drawnPath[0].x, drawnPath[0].y);
-  for (let i = 1; i < drawnPath.length; i++) {
-    ctx.lineTo(drawnPath[i].x, drawnPath[i].y);
-  }
-  ctx.strokeStyle = '#000';
-  ctx.lineWidth = LINE_THICK;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
+  segs.forEach(s => { ctx.moveTo(s.a, groundY); ctx.lineTo(s.b, groundY); });
   ctx.stroke();
-  ctx.restore();
 }
 
-function drawObstacles() {
-  ctx.save();
-  ctx.translate(-cameraX, 0);
-  ctx.strokeStyle = '#000';
-  ctx.lineWidth = LINE_THICK;
+function drawObstacle(obs) {
+  const cx = obs.x, w = obs.w, h = obs.h;
+  ctx.strokeStyle = '#333';
+  ctx.lineWidth = 2;
 
-  for (const obs of obstacles) {
-    switch (obs.type) {
-      case 'gap': {
-        // Draw a gap indicator — two broken edges
-        const y = obs.y;
-        ctx.beginPath();
-        ctx.moveTo(obs.x, y);
-        ctx.lineTo(obs.x, y + 30);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(obs.x + obs.width, y);
-        ctx.lineTo(obs.x + obs.width, y + 30);
-        ctx.stroke();
-        // Dashed line showing the gap
-        ctx.setLineDash([4, 4]);
-        ctx.beginPath();
-        ctx.moveTo(obs.x, y + 15);
-        ctx.lineTo(obs.x + obs.width, y + 15);
-        ctx.stroke();
-        ctx.setLineDash([]);
-        break;
-      }
-      case 'wall': {
-        const y = obs.y;
-        ctx.strokeRect(obs.x, y - obs.height, obs.width, obs.height);
-        // hatching
-        for (let hy = y - obs.height + 8; hy < y; hy += 10) {
-          ctx.beginPath();
-          ctx.moveTo(obs.x + 2, hy);
-          ctx.lineTo(obs.x + obs.width - 2, hy + 6);
-          ctx.stroke();
-        }
-        break;
-      }
-      case 'pit': {
-        const y = obs.y;
-        ctx.beginPath();
-        ctx.moveTo(obs.x, y);
-        ctx.lineTo(obs.x, y + obs.depth);
-        ctx.lineTo(obs.x + obs.width, y + obs.depth);
-        ctx.lineTo(obs.x + obs.width, y);
-        ctx.stroke();
-        break;
-      }
+  if (obs.type === OBS.GAP) {
+    ctx.setLineDash([5, 5]);
+    ctx.beginPath();
+    ctx.moveTo(cx - w/2, groundY); ctx.lineTo(cx - w/2, groundY + h);
+    ctx.moveTo(cx + w/2, groundY); ctx.lineTo(cx + w/2, groundY + h);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  } else if (obs.type === OBS.WALL) {
+    ctx.fillStyle = 'rgba(0,0,0,0.04)';
+    ctx.fillRect(cx - w/2, groundY - h, w, h);
+    ctx.strokeRect(cx - w/2, groundY - h, w, h);
+    // hatching
+    ctx.lineWidth = 0.7;
+    for (let y = groundY - h + 8; y < groundY; y += 9) {
+      ctx.beginPath();
+      ctx.moveTo(cx - w/2 + 2, y);
+      ctx.lineTo(cx + w/2 - 2, y + 5);
+      ctx.stroke();
     }
+    ctx.lineWidth = 2;
+  } else if (obs.type === OBS.PIT) {
+    ctx.beginPath();
+    ctx.moveTo(cx - w/2, groundY);
+    ctx.lineTo(cx - w/2, groundY + h);
+    ctx.lineTo(cx + w/2, groundY + h);
+    ctx.lineTo(cx + w/2, groundY);
+    ctx.stroke();
+    // hatch
+    ctx.lineWidth = 0.6;
+    for (let i = 8; i < h; i += 9) {
+      ctx.beginPath();
+      ctx.moveTo(cx - w/2, groundY + i);
+      ctx.lineTo(cx - w/2 + i * 0.8, groundY);
+      ctx.stroke();
+    }
+    ctx.lineWidth = 2;
   }
-  ctx.restore();
 }
 
-function drawMano() {
-  ctx.save();
-  const sx = mano.x - cameraX;
-  const sy = mano.y;
-  const s = MANO_SIZE;
-
-  ctx.strokeStyle = '#000';
-  ctx.fillStyle = '#000';
+function drawPlacedTool(p) {
+  ctx.strokeStyle = '#2080e0';
   ctx.lineWidth = 2.5;
   ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
 
-  /* Animation offsets */
-  let bobY = 0, tilt = 0, legPhase = 0;
-  if (mano.mood === 'happy') {
-    bobY = Math.sin(mano.frame * 0.15) * 3;
-    legPhase = mano.frame * 0.15;
-  } else if (mano.mood === 'tantrum') {
-    bobY = Math.sin(mano.frame * 0.5) * 5;
-    tilt = Math.sin(mano.frame * 0.6) * 0.15;
-  } else if (mano.mood === 'waiting') {
-    bobY = Math.sin(mano.frame * 0.08) * 1.5;
-  }
-
-  ctx.translate(sx, sy + bobY);
-  ctx.rotate(tilt);
-
-  /* Legs */
-  const legSpread = mano.mood === 'happy' ? Math.sin(legPhase) * 8 : 0;
-  // left leg
-  ctx.beginPath();
-  ctx.moveTo(0, -s * 0.3);
-  ctx.lineTo(-4 - legSpread, 0);
-  ctx.stroke();
-  // right leg
-  ctx.beginPath();
-  ctx.moveTo(0, -s * 0.3);
-  ctx.lineTo(4 + legSpread, 0);
-  ctx.stroke();
-
-  /* Body — single line from feet up */
-  ctx.beginPath();
-  ctx.moveTo(0, -s * 0.3);
-  ctx.lineTo(0, -s * 0.9);
-  ctx.stroke();
-
-  /* Arms */
-  const armSwing = mano.mood === 'happy' ? Math.sin(legPhase + 1) * 12 : 0;
-  // left arm
-  ctx.beginPath();
-  ctx.moveTo(0, -s * 0.75);
-  ctx.lineTo(-10 - armSwing * 0.5, -s * 0.5);
-  ctx.stroke();
-  // right arm
-  ctx.beginPath();
-  ctx.moveTo(0, -s * 0.75);
-  ctx.lineTo(10 + armSwing * 0.5, -s * 0.55);
-  ctx.stroke();
-
-  /* Head */
-  const headR = s * 0.22;
-  const headX = 0;
-  const headY = -s * 0.9 - headR;
-  ctx.beginPath();
-  ctx.arc(headX, headY, headR, 0, Math.PI * 2);
-  ctx.stroke();
-
-  /* Nose — big and pointing right, La Linea signature */
-  ctx.beginPath();
-  ctx.moveTo(headX + headR - 1, headY);
-  ctx.lineTo(headX + headR + 10, headY + 3);
-  ctx.lineTo(headX + headR - 1, headY + 4);
-  ctx.stroke();
-
-  /* Eye — small dot */
-  ctx.beginPath();
-  ctx.arc(headX + headR * 0.3, headY - 1, 1.5, 0, Math.PI * 2);
-  ctx.fill();
-
-  /* Mouth — changes with mood */
-  if (mano.mood === 'happy') {
+  const x = p.x, y = p.y;
+  if (p.type === TOOL.BRIDGE) {
     ctx.beginPath();
-    ctx.arc(headX + headR * 0.3, headY + headR * 0.4, 3, 0, Math.PI);
+    ctx.moveTo(x - 32, y); ctx.lineTo(x + 32, y); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x - 27, y); ctx.lineTo(x - 27, y + 10); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x + 27, y); ctx.lineTo(x + 27, y + 10); ctx.stroke();
+  } else if (p.type === TOOL.RAMP) {
+    ctx.beginPath();
+    ctx.moveTo(x - 28, y + 18);
+    ctx.lineTo(x + 16, y - 22);
+    ctx.lineTo(x + 16, y + 18);
+    ctx.closePath(); ctx.stroke();
+  } else if (p.type === TOOL.TRAMPOLINE) {
+    ctx.beginPath(); ctx.moveTo(x - 22, y + 12); ctx.lineTo(x - 22, y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x + 22, y + 12); ctx.lineTo(x + 22, y); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x - 24, y);
+    ctx.quadraticCurveTo(x, y + 14, x + 24, y);
     ctx.stroke();
-  } else if (mano.mood === 'tantrum') {
-    // open shouting mouth
+  } else if (p.type === TOOL.BUCKET) {
     ctx.beginPath();
-    ctx.arc(headX + headR * 0.3, headY + headR * 0.35, 3.5, 0, Math.PI * 2);
-    ctx.stroke();
-  } else {
-    // neutral line
-    ctx.beginPath();
-    ctx.moveTo(headX, headY + headR * 0.45);
-    ctx.lineTo(headX + headR * 0.6, headY + headR * 0.45);
+    ctx.moveTo(x - 16, y - 12);
+    ctx.lineTo(x - 20, y + 16);
+    ctx.lineTo(x + 20, y + 16);
+    ctx.lineTo(x + 16, y - 12);
     ctx.stroke();
   }
-
-  ctx.restore();
 }
 
-function drawHUD() {
+// ── Draw Manó ──
+function drawMano() {
+  const m = mano;
+  let dx = m.x, dy = m.y;
+
+  if (m.angry && phase === PHASE.TANTRUM) {
+    dx += Math.sin(m.shakeTimer * 0.06) * 5;
+  }
+  if (m.happy) {
+    dy -= Math.abs(Math.sin(m.frame * 0.9)) * 16;
+  }
+
   ctx.save();
-  ctx.fillStyle = '#000';
-  ctx.textAlign = 'center';
-  ctx.font = 'bold 22px Courier New, monospace';
-  ctx.fillText(String(score), lw() / 2, 36);
-  ctx.font = '14px Courier New, monospace';
-  ctx.fillStyle = '#555';
-  ctx.fillText('Best: ' + bestScore, lw() / 2, 56);
-  ctx.restore();
+  ctx.translate(dx, dy);
 
-  /* Draw hint on right side when stuck */
-  if (mano.mood !== 'happy' && state === 'playing') {
-    ctx.save();
-    ctx.fillStyle = 'rgba(0,0,0,0.25)';
-    ctx.textAlign = 'center';
-    ctx.font = '16px Courier New, monospace';
-    ctx.fillText('Draw the path ahead →', lw() * 0.7, lh() * 0.15);
-    ctx.restore();
+  const facing = m.angry ? -1 : 1;
+  ctx.scale(facing, 1);
+
+  ctx.strokeStyle = '#333';
+  ctx.fillStyle   = '#333';
+  ctx.lineWidth   = 2.2;
+  ctx.lineCap     = 'round';
+  ctx.lineJoin    = 'round';
+
+  // Legs
+  const legSwing = m.walking ? Math.sin(m.frame * 3) * 12 : 0;
+  ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo(-6 + legSwing,  0); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo( 6 - legSwing,  0); ctx.stroke();
+
+  // Body
+  ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo(0, -42); ctx.stroke();
+
+  // Arms
+  if (m.angry) {
+    const w = Math.sin(m.shakeTimer * 0.05) * 16;
+    ctx.beginPath(); ctx.moveTo(0, -36); ctx.lineTo( 14, -42 + w); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, -36); ctx.lineTo(-14, -46 - w); ctx.stroke();
+  } else {
+    const a = m.walking ? Math.sin(m.frame * 3) * 9 : 0;
+    ctx.beginPath(); ctx.moveTo(0, -35); ctx.lineTo( 12 + a, -26); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, -35); ctx.lineTo(-12 - a, -26); ctx.stroke();
   }
+
+  // Head
+  ctx.beginPath(); ctx.arc(0, -53, 11, 0, Math.PI * 2); ctx.stroke();
+
+  // Nose (prominent La Linea style)
+  ctx.beginPath();
+  ctx.moveTo(9, -55); ctx.lineTo(18, -52); ctx.lineTo(9, -49);
+  ctx.stroke();
+
+  // Eye
+  if (m.angry) {
+    ctx.beginPath(); ctx.arc(3, -55, 1.6, 0, Math.PI * 2); ctx.fill();
+    // angry eyebrow
+    ctx.beginPath(); ctx.moveTo(-1, -59); ctx.lineTo(7, -57); ctx.stroke();
+    // frown
+    ctx.beginPath(); ctx.moveTo(-3, -46); ctx.lineTo(5, -47); ctx.stroke();
+  } else if (m.happy) {
+    ctx.beginPath(); ctx.arc(3, -55, 1.6, 0, Math.PI * 2); ctx.fill();
+    // smile
+    ctx.beginPath(); ctx.arc(2, -48, 4.5, 0.1, Math.PI - 0.1); ctx.stroke();
+  } else {
+    ctx.beginPath(); ctx.arc(3, -55, 1.6, 0, Math.PI * 2); ctx.fill();
+  }
+
+  ctx.restore();
 }
 
-/* ── Main Loop ── */
-function frame() {
-  update();
-  drawBackground();
-  drawPath();
-  drawObstacles();
-  if (state === 'playing') drawMano();
-  drawHUD();
-  requestAnimationFrame(frame);
+// ══════════════════════════════════
+// MAIN LOOP
+// ══════════════════════════════════
+
+function tick(ts) {
+  if (!lastTime) lastTime = ts;
+  const dt = Math.min(ts - lastTime, 33);
+  lastTime = ts;
+
+  if (phase === PHASE.RUN)     updateRun();
+  if (phase === PHASE.TANTRUM) updateTantrum(dt);
+  if (phase === PHASE.SUCCESS) updateSuccess();
+
+  draw();
+  animId = requestAnimationFrame(tick);
 }
 
-/* ── Restart ── */
-restartBtn.addEventListener('click', () => { init(); });
+// ── Start ──
+function startGame() {
+  score = 0; lives = 3; level = 1; firstTry = true;
+  lastTime = 0;
+  $('retry-btn').style.display = 'none';
+  $('next-btn').style.display  = 'none';
+  $('overlay').style.display   = 'none';
+  resize();
+  initLevel();
+  if (animId) cancelAnimationFrame(animId);
+  animId = requestAnimationFrame(tick);
+}
 
-/* ── Boot ── */
-init();
-requestAnimationFrame(frame);
+startGame();
 </script>
 </body>
 </html>
