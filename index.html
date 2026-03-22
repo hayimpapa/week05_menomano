@@ -5,36 +5,614 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Menő Manó – La Linea Runner</title>
   <link rel="stylesheet" href="/src/style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Menő Manó – La Linea Runner</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%;
+    height: 100dvh;          /* dynamic viewport height – works with mobile address bars */
+    height: 100vh;           /* fallback */
+    overflow: hidden;
+    background: #111;
+    font-family: 'Segoe UI', sans-serif;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #wrap {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  /* ── Canvas area ── */
+  #canvas-wrap {
+    position: relative;
+    flex: 1 1 0;
+    min-height: 0;           /* CRITICAL: lets flex item shrink below content size */
+    overflow: hidden;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  /* ── Overlay (only covers canvas, NOT buttons) ── */
+  #overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.75);
+    z-index: 10;
+  }
+  #overlay.hidden { display: none; }
+  #overlay h1 { color: #fff; font-size: 30px; margin-bottom: 4px; }
+  #overlay .sub { color: #aaa; font-size: 17px; margin-bottom: 16px; }
+  #overlay .score-line { color: #ffd54f; font-size: 20px; margin-bottom: 4px; }
+  #overlay button {
+    margin-top: 14px;
+    padding: 14px 44px;
+    font-size: 20px;
+    font-weight: 700;
+    border: none;
+    border-radius: 12px;
+    background: #ffd54f;
+    color: #111;
+    cursor: pointer;
+  }
+  #overlay button:active { background: #ffc107; transform: scale(0.96); }
+
+  /* ── Action buttons bar ── */
+  #controls {
+    flex: 0 0 auto;           /* never grow/shrink */
+    display: flex;
+    gap: 6px;
+    padding: 8px 6px;
+    padding-bottom: max(8px, env(safe-area-inset-bottom));  /* notch phones */
+    justify-content: center;
+    background: #111;
+    border-top: 1px solid #333;
+    z-index: 20;
+  }
+  .btn {
+    flex: 1 1 0;
+    max-width: 110px;
+    min-height: 72px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 8px 2px 6px;
+    border: 2.5px solid #444;
+    border-radius: 14px;
+    background: #1a1a1a;
+    color: #bbb;
+    font-size: 13px;
+    font-weight: 700;
+    text-align: center;
+    cursor: pointer;
+    transition: background .08s, border-color .08s, transform .06s;
+    line-height: 1;
+  }
+  .btn svg { flex-shrink: 0; }
+  .btn:active, .btn.pressed {
+    background: #333;
+    border-color: #fff;
+    color: #fff;
+    transform: scale(0.94);
+  }
+  .btn.correct {
+    background: #1b5e20;
+    border-color: #4caf50;
+    color: #4caf50;
+  }
+  .btn.wrong {
+    background: #6a0000;
+    border-color: #f44336;
+    color: #f44336;
+  }
+</style>
 </head>
 <body>
 <div id="wrap">
-  <canvas id="c"></canvas>
+  <!-- Canvas area with overlay inside it -->
+  <div id="canvas-wrap">
+    <canvas id="c"></canvas>
+    <div id="overlay">
+      <h1 id="olTitle">Menő Manó</h1>
+      <div class="sub" id="olSub">La Linea Runner</div>
+      <div class="score-line" id="olScore"></div>
+      <div class="score-line" id="olBest"></div>
+      <button id="olBtn">START</button>
+    </div>
+  </div>
+
+  <!-- Action buttons – always visible at bottom -->
   <div id="controls">
     <button class="btn" data-action="bridge">
-      <svg width="36" height="28" viewBox="0 0 36 28"><path d="M2 24 Q18 8 34 24" stroke="#aaa" stroke-width="3" fill="none"/><line x1="2" y1="24" x2="34" y2="24" stroke="#aaa" stroke-width="2"/></svg>
+      <svg width="38" height="26" viewBox="0 0 38 26"><path d="M2 22 Q19 6 36 22" stroke="currentColor" stroke-width="3" fill="none"/><line x1="2" y1="23" x2="36" y2="23" stroke="currentColor" stroke-width="2"/></svg>
       Bridge
     </button>
     <button class="btn" data-action="trampoline">
-      <svg width="36" height="28" viewBox="0 0 36 28"><ellipse cx="18" cy="22" rx="14" ry="4" stroke="#aaa" stroke-width="2.5" fill="none"/><path d="M8 22 Q18 8 28 22" stroke="#aaa" stroke-width="2" fill="none" stroke-dasharray="3,2"/></svg>
+      <svg width="38" height="26" viewBox="0 0 38 26"><ellipse cx="19" cy="20" rx="15" ry="4" stroke="currentColor" stroke-width="2.5" fill="none"/><path d="M8 20 Q19 6 30 20" stroke="currentColor" stroke-width="2" fill="none" stroke-dasharray="3,2"/></svg>
       Tramp
     </button>
     <button class="btn" data-action="ladder">
-      <svg width="36" height="28" viewBox="0 0 36 28"><line x1="12" y1="2" x2="12" y2="26" stroke="#aaa" stroke-width="2.5"/><line x1="24" y1="2" x2="24" y2="26" stroke="#aaa" stroke-width="2.5"/><line x1="12" y1="8" x2="24" y2="8" stroke="#aaa" stroke-width="2"/><line x1="12" y1="14" x2="24" y2="14" stroke="#aaa" stroke-width="2"/><line x1="12" y1="20" x2="24" y2="20" stroke="#aaa" stroke-width="2"/></svg>
+      <svg width="38" height="26" viewBox="0 0 38 26"><line x1="13" y1="2" x2="13" y2="24" stroke="currentColor" stroke-width="2.5"/><line x1="25" y1="2" x2="25" y2="24" stroke="currentColor" stroke-width="2.5"/><line x1="13" y1="7" x2="25" y2="7" stroke="currentColor" stroke-width="2"/><line x1="13" y1="13" x2="25" y2="13" stroke="currentColor" stroke-width="2"/><line x1="13" y1="19" x2="25" y2="19" stroke="currentColor" stroke-width="2"/></svg>
       Ladder
     </button>
     <button class="btn" data-action="duck">
-      <svg width="36" height="28" viewBox="0 0 36 28"><path d="M10 18 Q10 10 18 10 Q26 10 26 16" stroke="#aaa" stroke-width="2.5" fill="none"/><circle cx="20" cy="12" r="1.5" fill="#aaa"/><line x1="26" y1="16" x2="30" y2="14" stroke="#aaa" stroke-width="2"/><line x1="10" y1="22" x2="30" y2="22" stroke="#aaa" stroke-width="2"/></svg>
+      <svg width="38" height="26" viewBox="0 0 38 26"><path d="M10 18 Q10 9 19 9 Q28 9 28 15" stroke="currentColor" stroke-width="2.5" fill="none"/><circle cx="21" cy="11" r="1.5" fill="currentColor"/><line x1="28" y1="15" x2="33" y2="13" stroke="currentColor" stroke-width="2"/><line x1="8" y1="22" x2="32" y2="22" stroke="currentColor" stroke-width="2"/></svg>
       Duck
     </button>
   </div>
-  <div id="overlay">
-    <h1 id="olTitle">Menő Manó</h1>
-    <div class="sub" id="olSub">La Linea Runner</div>
-    <div class="score-line" id="olScore"></div>
-    <div class="score-line" id="olBest"></div>
-    <button id="olBtn">START</button>
-  </div>
 </div>
 <script type="module" src="/src/main.js"></script>
+
+<script>
+// ── Canvas setup ──
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const overlay = document.getElementById('overlay');
+const olTitle = document.getElementById('olTitle');
+const olSub = document.getElementById('olSub');
+const olScore = document.getElementById('olScore');
+const olBest = document.getElementById('olBest');
+const olBtn = document.getElementById('olBtn');
+const buttons = document.querySelectorAll('.btn');
+
+let W, H, groundY, dpr;
+let lastResizeW = 0, lastResizeH = 0;
+
+function resize() {
+  dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  // Only resize canvas buffer when dimensions actually change (avoids flicker)
+  if (Math.round(rect.width) !== lastResizeW || Math.round(rect.height) !== lastResizeH) {
+    lastResizeW = Math.round(rect.width);
+    lastResizeH = Math.round(rect.height);
+    W = rect.width;
+    H = rect.height;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    groundY = H * 0.75;
+  }
+}
+window.addEventListener('resize', resize);
+resize();
+
+// ── Constants ──
+const MANO_X = 70;
+const BASE_SPEED = 1.8;
+const SPEED_INC = 0.08;
+const MAX_SPEED = 7;
+const OBS_MIN_GAP = 280;
+const OBS_MAX_GAP = 500;
+const ACTION_WINDOW = 140;       // px range before obstacle to accept input
+const GAP_WIDTH = 80;
+const WALL_HEIGHT = 70;
+const WALL_WIDTH = 18;
+
+// ── Game state ──
+let state = 'menu'; // menu | running | acting | dead
+let score = 0;
+let best = parseInt(localStorage.getItem('mano_best') || '0', 10);
+let speed = BASE_SPEED;
+let obstacles = [];
+let nextObsDist = 300;
+let manoAnim = 0;
+let actionTimer = 0;
+let currentAction = '';       // which action animation is playing
+let manoY = 0;
+let manoSquish = false;
+let deadTimer = 0;
+
+const VALID_ACTIONS = {
+  gap: ['bridge'],
+  wall: ['trampoline', 'ladder'],
+  bird: ['duck']
+};
+
+// ── Obstacle spawning ──
+function spawnObstacle() {
+  const types = score < 3
+    ? ['gap', 'wall']
+    : ['gap', 'wall', 'bird', 'gap', 'wall', 'bird'];
+  const type = types[Math.floor(Math.random() * types.length)];
+  obstacles.push({ type, x: W + 40, passed: false, acted: false, actedWith: '' });
+  nextObsDist = OBS_MIN_GAP + Math.random() * (OBS_MAX_GAP - OBS_MIN_GAP);
+}
+
+// ── Start / Restart ──
+function startGame() {
+  state = 'running';
+  score = 0;
+  speed = BASE_SPEED;
+  obstacles = [];
+  nextObsDist = 300;
+  manoAnim = 0;
+  actionTimer = 0;
+  currentAction = '';
+  manoY = 0;
+  manoSquish = false;
+  deadTimer = 0;
+  overlay.classList.add('hidden');
+  clearButtonEffects();
+}
+
+function showMenu(isDead) {
+  state = 'menu';
+  if (isDead) {
+    if (score > best) {
+      best = score;
+      localStorage.setItem('mano_best', String(best));
+    }
+    olTitle.textContent = 'Game Over!';
+    olSub.textContent = '';
+    olScore.textContent = 'Score: ' + score;
+    olBest.textContent = 'Best: ' + best;
+    olBtn.textContent = 'RETRY';
+  } else {
+    olTitle.textContent = 'Menő Manó';
+    olSub.textContent = 'La Linea Runner';
+    olScore.textContent = best > 0 ? 'Best: ' + best : '';
+    olBest.textContent = '';
+    olBtn.textContent = 'START';
+  }
+  overlay.classList.remove('hidden');
+}
+
+olBtn.addEventListener('click', (e) => { e.stopPropagation(); startGame(); });
+
+// ── Player input ──
+function clearButtonEffects() {
+  buttons.forEach(b => b.classList.remove('correct', 'wrong', 'pressed'));
+}
+
+function handleAction(action) {
+  if (state !== 'running') return;
+
+  // Find nearest unacted obstacle within action window
+  let target = null;
+  for (const obs of obstacles) {
+    if (obs.acted || obs.passed) continue;
+    const dist = obs.x - MANO_X;
+    if (dist < ACTION_WINDOW && dist > -30) {
+      target = obs;
+      break;
+    }
+  }
+
+  if (!target) {
+    flashButton(action, false);
+    die();
+    return;
+  }
+
+  if (VALID_ACTIONS[target.type].includes(action)) {
+    target.acted = true;
+    target.actedWith = action;     // store which tool was used ON the obstacle
+    currentAction = action;
+    actionTimer = 40;
+    state = 'acting';
+    flashButton(action, true);
+  } else {
+    flashButton(action, false);
+    die();
+  }
+}
+
+function flashButton(action, success) {
+  clearButtonEffects();
+  buttons.forEach(b => {
+    if (b.dataset.action === action) {
+      b.classList.add(success ? 'correct' : 'wrong');
+    }
+  });
+  setTimeout(clearButtonEffects, 500);
+}
+
+function die() {
+  state = 'dead';
+  deadTimer = 60;
+}
+
+// Button events
+buttons.forEach(btn => {
+  const action = btn.dataset.action;
+  btn.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    btn.classList.add('pressed');
+    handleAction(action);
+  });
+  btn.addEventListener('pointerup', () => btn.classList.remove('pressed'));
+  btn.addEventListener('pointercancel', () => btn.classList.remove('pressed'));
+  btn.addEventListener('pointerleave', () => btn.classList.remove('pressed'));
+});
+
+// Keyboard
+const KEY_MAP = { '1': 'bridge', '2': 'trampoline', '3': 'ladder', '4': 'duck',
+                  'a': 'bridge', 's': 'trampoline', 'd': 'ladder', 'f': 'duck' };
+document.addEventListener('keydown', (e) => {
+  const action = KEY_MAP[e.key.toLowerCase()];
+  if (action) handleAction(action);
+  if ((e.key === ' ' || e.key === 'Enter') && state === 'menu') startGame();
+});
+
+// ── Drawing ──
+const LINE_COLOR = '#e0e0e0';
+
+function drawBackground() {
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, '#16213e');
+  grad.addColorStop(1, '#0f3460');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+}
+
+function drawGround() {
+  ctx.strokeStyle = LINE_COLOR;
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+
+  const sortedGaps = obstacles.filter(o => o.type === 'gap').sort((a, b) => a.x - b.x);
+
+  // Draw the continuous ground line, breaking at gaps
+  ctx.beginPath();
+  ctx.moveTo(0, groundY);
+  let prevEnd = 0;
+  for (const gap of sortedGaps) {
+    const gx1 = gap.x - GAP_WIDTH / 2;
+    const gx2 = gap.x + GAP_WIDTH / 2;
+    if (gx1 > prevEnd) ctx.lineTo(gx1, groundY);
+    ctx.moveTo(gx2, groundY);
+    prevEnd = gx2;
+  }
+  ctx.lineTo(W + 10, groundY);
+  ctx.stroke();
+
+  // Draw bridges on acted gaps
+  for (const gap of sortedGaps) {
+    if (!gap.acted) continue;
+    const gx1 = gap.x - GAP_WIDTH / 2;
+    const gx2 = gap.x + GAP_WIDTH / 2;
+    ctx.strokeStyle = '#ffd54f';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(gx1, groundY);
+    ctx.quadraticCurveTo(gap.x, groundY - 14, gx2, groundY);
+    ctx.stroke();
+    ctx.lineWidth = 1.5;
+    for (let px = gx1 + 8; px < gx2 - 4; px += 10) {
+      const t = (px - gx1) / GAP_WIDTH;
+      const py = groundY - Math.sin(t * Math.PI) * 14;
+      ctx.beginPath();
+      ctx.moveTo(px, py - 3);
+      ctx.lineTo(px, py + 3);
+      ctx.stroke();
+    }
+    ctx.strokeStyle = LINE_COLOR;
+    ctx.lineWidth = 3;
+  }
+}
+
+function drawWall(obs) {
+  const wx = obs.x - WALL_WIDTH / 2;
+  ctx.fillStyle = '#555';
+  ctx.strokeStyle = LINE_COLOR;
+  ctx.lineWidth = 2.5;
+  ctx.fillRect(wx, groundY - WALL_HEIGHT, WALL_WIDTH, WALL_HEIGHT);
+  ctx.strokeRect(wx, groundY - WALL_HEIGHT, WALL_WIDTH, WALL_HEIGHT);
+
+  if (!obs.acted) return;
+  // Use obs.actedWith instead of global — fixes multi-obstacle bug
+  if (obs.actedWith === 'ladder') {
+    ctx.strokeStyle = '#ffd54f';
+    ctx.lineWidth = 2;
+    const lx = obs.x - WALL_WIDTH / 2 - 16;
+    ctx.beginPath(); ctx.moveTo(lx, groundY); ctx.lineTo(lx + 6, groundY - WALL_HEIGHT - 6); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(lx + 14, groundY); ctx.lineTo(lx + 20, groundY - WALL_HEIGHT - 6); ctx.stroke();
+    for (let ry = groundY - 12; ry > groundY - WALL_HEIGHT - 4; ry -= 12) {
+      const t = (groundY - ry) / (WALL_HEIGHT + 6);
+      ctx.beginPath(); ctx.moveTo(lx + t * 6, ry); ctx.lineTo(lx + 14 + t * 6, ry); ctx.stroke();
+    }
+  } else if (obs.actedWith === 'trampoline') {
+    ctx.strokeStyle = '#ffd54f';
+    ctx.lineWidth = 2.5;
+    const tx = obs.x - WALL_WIDTH / 2 - 30;
+    ctx.beginPath();
+    ctx.moveTo(tx, groundY); ctx.lineTo(tx + 10, groundY - 16);
+    ctx.lineTo(tx + 30, groundY - 16); ctx.lineTo(tx + 40, groundY);
+    ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(tx + 20, groundY - 18, 18, 4, 0, 0, Math.PI * 2); ctx.stroke();
+  }
+}
+
+function drawBird(obs) {
+  const bx = obs.x;
+  const by = groundY - 50 + Math.sin(bx * 0.04) * 8;
+  const wing = Math.sin(Date.now() * 0.012 + bx) * 12;
+  ctx.strokeStyle = '#e57373';
+  ctx.lineWidth = 2.5;
+  ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.ellipse(bx, by, 12, 6, 0, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(bx - 4, by - 4); ctx.quadraticCurveTo(bx - 10, by - 14 + wing, bx - 18, by - 8 + wing); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(bx + 4, by - 4); ctx.quadraticCurveTo(bx + 10, by - 14 + wing, bx + 18, by - 8 + wing); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(bx - 12, by - 1); ctx.lineTo(bx - 20, by + 1); ctx.stroke();
+  ctx.fillStyle = '#e57373'; ctx.beginPath(); ctx.arc(bx - 6, by - 2, 1.5, 0, Math.PI * 2); ctx.fill();
+}
+
+function drawMano() {
+  const mx = MANO_X;
+  const baseY = groundY + manoY;
+  const walk = Math.sin(manoAnim * 0.15);
+  const ducking = manoSquish || (state === 'acting' && currentAction === 'duck');
+
+  ctx.strokeStyle = LINE_COLOR;
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  if (ducking) {
+    ctx.beginPath(); ctx.moveTo(mx, baseY); ctx.lineTo(mx, baseY - 14);
+    ctx.quadraticCurveTo(mx + 6, baseY - 20, mx + 2, baseY - 24); ctx.stroke();
+    ctx.beginPath(); ctx.arc(mx + 2, baseY - 30, 7, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(mx + 9, baseY - 31); ctx.lineTo(mx + 16, baseY - 33); ctx.stroke();
+  } else {
+    const top = baseY - 50;
+    const hip = baseY - 18;
+    // legs
+    ctx.beginPath(); ctx.moveTo(mx - 6 + walk * 5, baseY); ctx.lineTo(mx, hip); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(mx + 6 - walk * 5, baseY); ctx.lineTo(mx, hip); ctx.stroke();
+    // body
+    ctx.beginPath(); ctx.moveTo(mx, hip); ctx.lineTo(mx, top); ctx.stroke();
+    // arms
+    ctx.beginPath(); ctx.moveTo(mx, top + 12); ctx.lineTo(mx - 10 - walk * 4, top + 22); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(mx, top + 12); ctx.lineTo(mx + 10 + walk * 4, top + 22); ctx.stroke();
+    // head
+    ctx.beginPath(); ctx.arc(mx, top - 8, 9, 0, Math.PI * 2); ctx.stroke();
+    // nose
+    ctx.beginPath(); ctx.moveTo(mx + 8, top - 10); ctx.lineTo(mx + 18, top - 12); ctx.lineTo(mx + 12, top - 6); ctx.stroke();
+    // eye
+    ctx.fillStyle = LINE_COLOR; ctx.beginPath(); ctx.arc(mx + 3, top - 11, 1.5, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+function drawHUD() {
+  ctx.fillStyle = '#ffd54f';
+  ctx.font = 'bold 22px "Segoe UI", sans-serif';
+  ctx.textAlign = 'right';
+  ctx.fillText('Score: ' + score, W - 16, 32);
+  ctx.fillStyle = '#666';
+  ctx.font = '14px "Segoe UI", sans-serif';
+  ctx.fillText('Best: ' + best, W - 16, 50);
+}
+
+function drawDeathEffect() {
+  if (state !== 'dead') return;
+  const a = deadTimer / 60;
+  ctx.fillStyle = `rgba(255,0,0,${a * 0.3})`;
+  ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = `rgba(255,200,200,${a})`;
+  ctx.lineWidth = 2;
+  for (let i = 0; i < 6; i++) {
+    const ang = (i / 6) * Math.PI * 2 + Date.now() * 0.01;
+    const r = 20 + (60 - deadTimer) * 0.8;
+    ctx.beginPath();
+    ctx.moveTo(MANO_X + Math.cos(ang) * r, groundY - 30 + Math.sin(ang) * r);
+    ctx.lineTo(MANO_X + Math.cos(ang) * (r + 10), groundY - 30 + Math.sin(ang) * (r + 10));
+    ctx.stroke();
+  }
+}
+
+// ── Obstacle warning indicators ──
+function drawWarnings() {
+  if (state !== 'running') return;
+  for (const obs of obstacles) {
+    if (obs.acted || obs.passed) continue;
+    const dist = obs.x - MANO_X;
+    if (dist < ACTION_WINDOW + 60 && dist > -30) {
+      // Show a pulsing "!" near the obstacle
+      const urgency = Math.max(0, 1 - dist / (ACTION_WINDOW + 60));
+      const pulse = 0.5 + Math.sin(Date.now() * 0.008) * 0.3;
+      ctx.fillStyle = `rgba(255, 213, 79, ${urgency * pulse})`;
+      ctx.font = 'bold 20px "Segoe UI", sans-serif';
+      ctx.textAlign = 'center';
+      const wy = obs.type === 'bird' ? groundY - 80 : groundY - WALL_HEIGHT - 20;
+      ctx.fillText('!', obs.x, wy);
+    }
+  }
+}
+
+// ── Update ──
+function updateAction() {
+  if (state !== 'acting') return;
+  actionTimer--;
+
+  if (currentAction === 'trampoline' || currentAction === 'ladder') {
+    const t = 1 - actionTimer / 40;
+    manoY = -Math.sin(t * Math.PI) * (WALL_HEIGHT + 20);
+  } else if (currentAction === 'duck') {
+    manoSquish = true;
+  } else if (currentAction === 'bridge') {
+    const t = 1 - actionTimer / 40;
+    manoY = -Math.sin(t * Math.PI) * 6;
+  }
+
+  if (actionTimer <= 0) {
+    state = 'running';
+    currentAction = '';
+    manoY = 0;
+    manoSquish = false;
+    score++;
+    speed = Math.min(MAX_SPEED, BASE_SPEED + score * SPEED_INC);
+  }
+}
+
+function checkCollision() {
+  for (const obs of obstacles) {
+    if (obs.acted || obs.passed) continue;
+    if (obs.type === 'gap') {
+      if (MANO_X > obs.x - GAP_WIDTH / 2 && MANO_X < obs.x + GAP_WIDTH / 2) { die(); return; }
+    } else if (obs.type === 'wall') {
+      if (Math.abs(obs.x - MANO_X) < WALL_WIDTH / 2 + 8) { die(); return; }
+    } else if (obs.type === 'bird') {
+      if (Math.abs(obs.x - MANO_X) < 18) { die(); return; }
+    }
+  }
+}
+
+function update() {
+  if (state === 'running' || state === 'acting') {
+    manoAnim++;
+    for (const obs of obstacles) obs.x -= speed;
+    for (const obs of obstacles) {
+      if (!obs.passed && obs.x < MANO_X - 60) obs.passed = true;
+    }
+    obstacles = obstacles.filter(o => o.x > -100);
+    nextObsDist -= speed;
+    if (nextObsDist <= 0) spawnObstacle();
+    updateAction();
+    if (state === 'running') checkCollision();
+  }
+  if (state === 'dead') {
+    deadTimer--;
+    if (deadTimer <= 0) showMenu(true);
+  }
+}
+
+function draw() {
+  drawBackground();
+  drawGround();
+  for (const obs of obstacles) {
+    if (obs.type === 'wall') drawWall(obs);
+    if (obs.type === 'bird') drawBird(obs);
+  }
+  drawWarnings();
+  drawMano();
+  drawHUD();
+  drawDeathEffect();
+}
+
+function loop() {
+  resize();
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+// ── Init ──
+showMenu(false);
+loop();
+</script>
 </body>
 </html>
