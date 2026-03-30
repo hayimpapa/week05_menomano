@@ -7,7 +7,7 @@ import {
 
 export function createGameState() {
   return {
-    state: 'menu', // menu | running | acting | dead
+    state: 'menu',
     score: 0,
     best: parseInt(localStorage.getItem('mano_best') || '0', 10),
     speed: BASE_SPEED,
@@ -16,10 +16,14 @@ export function createGameState() {
     manoAnim: 0,
     actionTimer: 0,
     actionType: '',
-    actionSuccess: false,
     manoY: 0,
     manoSquish: false,
     deadTimer: 0,
+    scrollOffset: 0,
+    shakeTimer: 0,
+    shakeIntensity: 0,
+    particles: [],
+    scorePopups: [],
   };
 }
 
@@ -35,6 +39,11 @@ export function startGame(game) {
   game.manoY = 0;
   game.manoSquish = false;
   game.deadTimer = 0;
+  game.scrollOffset = 0;
+  game.shakeTimer = 0;
+  game.shakeIntensity = 0;
+  game.particles = [];
+  game.scorePopups = [];
 }
 
 export function spawnObstacle(game, W) {
@@ -42,7 +51,10 @@ export function spawnObstacle(game, W) {
     ? ['gap', 'wall']
     : ['gap', 'wall', 'bird', 'gap', 'wall', 'bird'];
   const type = types[Math.floor(Math.random() * types.length)];
-  game.obstacles.push({ type, x: W + 40, passed: false, acted: false });
+  game.obstacles.push({
+    type, x: W + 40,
+    passed: false, acted: false, actedWith: '',
+  });
   game.nextObsDist = OBS_MIN_GAP + Math.random() * (OBS_MAX_GAP - OBS_MIN_GAP);
 }
 
@@ -67,8 +79,8 @@ export function handleAction(game, action) {
   const valid = VALID_ACTIONS[target.type];
   if (valid.includes(action)) {
     target.acted = true;
+    target.actedWith = action;
     game.actionType = action;
-    game.actionSuccess = true;
     game.actionTimer = 40;
     game.state = 'acting';
     return { success: true, action };
@@ -80,7 +92,9 @@ export function handleAction(game, action) {
 
 function die(game) {
   game.state = 'dead';
-  game.deadTimer = 60;
+  game.deadTimer = 70;
+  game.shakeTimer = 20;
+  game.shakeIntensity = 8;
 }
 
 function updateAction(game) {
@@ -94,7 +108,7 @@ function updateAction(game) {
     game.manoSquish = true;
   } else if (game.actionType === 'bridge') {
     const t = 1 - game.actionTimer / 40;
-    game.manoY = -Math.sin(t * Math.PI) * 6;
+    game.manoY = -Math.sin(t * Math.PI) * 8;
   }
 
   if (game.actionTimer <= 0) {
@@ -104,6 +118,12 @@ function updateAction(game) {
     game.manoSquish = false;
     game.score++;
     game.speed = Math.min(MAX_SPEED, BASE_SPEED + game.score * SPEED_INC);
+
+    // Score popup
+    game.scorePopups.push({
+      x: MANO_X, y: -60, text: '+1',
+      life: 40, maxLife: 40,
+    });
   }
 }
 
@@ -113,20 +133,11 @@ function checkCollision(game) {
     if (obs.type === 'gap') {
       const gx1 = obs.x - GAP_WIDTH / 2;
       const gx2 = obs.x + GAP_WIDTH / 2;
-      if (MANO_X > gx1 && MANO_X < gx2) {
-        die(game);
-        return;
-      }
+      if (MANO_X > gx1 && MANO_X < gx2) { die(game); return; }
     } else if (obs.type === 'wall') {
-      if (Math.abs(obs.x - MANO_X) < WALL_WIDTH / 2 + 8) {
-        die(game);
-        return;
-      }
+      if (Math.abs(obs.x - MANO_X) < WALL_WIDTH / 2 + 8) { die(game); return; }
     } else if (obs.type === 'bird') {
-      if (Math.abs(obs.x - MANO_X) < 18) {
-        die(game);
-        return;
-      }
+      if (Math.abs(obs.x - MANO_X) < 18) { die(game); return; }
     }
   }
 }
@@ -134,29 +145,55 @@ function checkCollision(game) {
 export function update(game, W) {
   if (game.state === 'running' || game.state === 'acting') {
     game.manoAnim++;
+    game.scrollOffset += game.speed;
 
+    for (const obs of game.obstacles) obs.x -= game.speed;
     for (const obs of game.obstacles) {
-      obs.x -= game.speed;
+      if (!obs.passed && obs.x < MANO_X - 60) obs.passed = true;
     }
-
-    for (const obs of game.obstacles) {
-      if (!obs.passed && obs.x < MANO_X - 60) {
-        obs.passed = true;
-      }
-    }
-
     game.obstacles = game.obstacles.filter(o => o.x > -100);
 
     game.nextObsDist -= game.speed;
-    if (game.nextObsDist <= 0) {
-      spawnObstacle(game, W);
-    }
+    if (game.nextObsDist <= 0) spawnObstacle(game, W);
 
     updateAction(game);
+    if (game.state === 'running') checkCollision(game);
 
-    if (game.state === 'running') {
-      checkCollision(game);
+    // Walking dust particles
+    if (game.manoAnim % 8 === 0 && game.manoY >= -2) {
+      game.particles.push({
+        x: MANO_X - 5 + Math.random() * 10,
+        y: 0, // relative to groundY
+        vx: -0.5 - Math.random() * 1,
+        vy: -0.5 - Math.random() * 1.5,
+        life: 20 + Math.random() * 15,
+        maxLife: 35,
+        size: 1.5 + Math.random() * 2,
+      });
     }
+  }
+
+  // Update particles
+  for (let i = game.particles.length - 1; i >= 0; i--) {
+    const p = game.particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.life--;
+    if (p.life <= 0) game.particles.splice(i, 1);
+  }
+
+  // Update score popups
+  for (let i = game.scorePopups.length - 1; i >= 0; i--) {
+    const sp = game.scorePopups[i];
+    sp.y -= 1.2;
+    sp.life--;
+    if (sp.life <= 0) game.scorePopups.splice(i, 1);
+  }
+
+  // Screen shake decay
+  if (game.shakeTimer > 0) {
+    game.shakeTimer--;
+    game.shakeIntensity *= 0.88;
   }
 
   if (game.state === 'dead') {

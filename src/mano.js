@@ -1,21 +1,22 @@
-import { LINE_COLOR } from './constants.js';
+import { LINE_COLOR, LINE_WIDTH } from './constants.js';
 
 /**
- * Draws Mano in authentic La Linea style.
+ * Draws Mano in authentic La Linea (Osvaldo Cavandoli) style.
  *
- * Key features from the original Osvaldo Cavandoli character:
- * - Large, bulbous hooked nose (the most iconic feature)
- * - Round head that flows into the nose seamlessly
- * - Thick continuous white line drawing style
- * - Slightly pot-bellied, rounded body
- * - Expressive hands with visible fingers
- * - Short, stubby legs with big feet
+ * The character is defined by:
+ * - Thick, continuous white line on dark background
+ * - ENORMOUS protruding hooked nose (the signature feature)
+ * - Round bald head flowing seamlessly into the nose
+ * - Pot-bellied rounded body
+ * - Short stubby legs, small feet
+ * - Expressive swinging arms
  */
 
-export function drawMano(ctx, mx, baseY, walkCycle, isDucking, state, actionType) {
+export function drawMano(ctx, mx, baseY, walkCycle, isDucking) {
+  ctx.save();
   ctx.strokeStyle = LINE_COLOR;
   ctx.fillStyle = LINE_COLOR;
-  ctx.lineWidth = 3.5;
+  ctx.lineWidth = LINE_WIDTH;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
 
@@ -24,223 +25,236 @@ export function drawMano(ctx, mx, baseY, walkCycle, isDucking, state, actionType
   } else {
     drawWalkingMano(ctx, mx, baseY, walkCycle);
   }
+  ctx.restore();
 }
 
-function drawWalkingMano(ctx, mx, baseY, walkCycle) {
-  // Scale factor for the character (roughly 55px tall)
+function drawWalkingMano(ctx, mx, baseY, walk) {
+  // Proportions (total ~68px tall)
   const footY = baseY;
-  const hipY = baseY - 18;
-  const waistY = baseY - 22;
-  const chestY = baseY - 36;
-  const shoulderY = baseY - 42;
-  const neckY = baseY - 44;
-  const headCenterY = baseY - 54;
+  const ankleY = baseY - 3;
+  const kneeY = baseY - 12;
+  const hipY = baseY - 20;
+  const bellyY = baseY - 28;
+  const chestY = baseY - 38;
+  const shoulderY = baseY - 44;
+  const neckY = baseY - 48;
+  const headY = baseY - 58;
 
-  // ── Legs with walk animation (short, stubby La Linea legs) ──
-  const legSwing = walkCycle * 6;
+  const legSwing = walk * 7;
+  const armSwing = walk * 6;
 
-  // Left leg
+  // ── LEFT LEG ──
   ctx.beginPath();
-  ctx.moveTo(mx - 4 + legSwing, footY);
-  // Foot (flat, slightly extended)
-  ctx.lineTo(mx - 8 + legSwing, footY);
-  ctx.moveTo(mx - 4 + legSwing, footY);
-  // Leg up to hip
-  ctx.lineTo(mx - 3 + legSwing * 0.3, hipY);
-  ctx.stroke();
-
-  // Right leg
-  ctx.beginPath();
-  ctx.moveTo(mx + 4 - legSwing, footY);
   // Foot
-  ctx.lineTo(mx + 8 - legSwing, footY);
-  ctx.moveTo(mx + 4 - legSwing, footY);
-  // Leg up to hip
-  ctx.lineTo(mx + 3 - legSwing * 0.3, hipY);
+  ctx.moveTo(mx - 10 + legSwing, footY);
+  ctx.lineTo(mx - 2 + legSwing, footY);
+  ctx.stroke();
+  // Shin to knee to hip
+  ctx.beginPath();
+  ctx.moveTo(mx - 4 + legSwing, ankleY);
+  ctx.quadraticCurveTo(mx - 5 + legSwing * 0.6, kneeY, mx - 2, hipY);
   ctx.stroke();
 
-  // ── Body (slightly pot-bellied, La Linea style) ──
+  // ── RIGHT LEG ──
+  ctx.beginPath();
+  ctx.moveTo(mx + 2 - legSwing, footY);
+  ctx.lineTo(mx + 10 - legSwing, footY);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(mx + 4 - legSwing, ankleY);
+  ctx.quadraticCurveTo(mx + 5 - legSwing * 0.6, kneeY, mx + 2, hipY);
+  ctx.stroke();
+
+  // ── BODY (pot-bellied, organic curve) ──
   ctx.beginPath();
   ctx.moveTo(mx, hipY);
-  // Slight belly curve forward
-  ctx.quadraticCurveTo(mx + 4, waistY, mx + 2, chestY);
+  // Belly curves outward
+  ctx.quadraticCurveTo(mx + 8, bellyY + 2, mx + 6, bellyY);
+  // Chest narrows back
+  ctx.quadraticCurveTo(mx + 4, chestY + 4, mx + 1, chestY);
+  // Up to shoulders
   ctx.lineTo(mx, shoulderY);
   ctx.stroke();
 
-  // ── Arms with swing (expressive, with hand detail) ──
-  const armSwing = walkCycle * 5;
-
-  // Back arm (behind body)
-  ctx.lineWidth = 3;
+  // ── BACK ARM (behind body) ──
+  ctx.lineWidth = LINE_WIDTH - 0.5;
   ctx.beginPath();
-  ctx.moveTo(mx, shoulderY + 4);
-  const backArmEndX = mx - 8 - armSwing;
-  const backArmEndY = shoulderY + 18;
-  ctx.quadraticCurveTo(mx - 5, shoulderY + 12, backArmEndX, backArmEndY);
+  ctx.moveTo(mx - 1, shoulderY + 2);
+  const backElbowX = mx - 7 - armSwing * 0.5;
+  const backElbowY = shoulderY + 10;
+  const backHandX = mx - 10 - armSwing;
+  const backHandY = shoulderY + 20;
+  ctx.quadraticCurveTo(backElbowX, backElbowY, backHandX, backHandY);
   ctx.stroke();
-  // Back hand - small fingers
-  drawHand(ctx, backArmEndX, backArmEndY, -1, 0.7);
+  // Hand
+  drawHand(ctx, backHandX, backHandY, -1);
 
-  // Front arm
-  ctx.lineWidth = 3.5;
+  // ── FRONT ARM ──
+  ctx.lineWidth = LINE_WIDTH;
   ctx.beginPath();
-  ctx.moveTo(mx + 1, shoulderY + 4);
-  const frontArmEndX = mx + 8 + armSwing;
-  const frontArmEndY = shoulderY + 18;
-  ctx.quadraticCurveTo(mx + 5, shoulderY + 12, frontArmEndX, frontArmEndY);
+  ctx.moveTo(mx + 2, shoulderY + 2);
+  const frontElbowX = mx + 8 + armSwing * 0.5;
+  const frontElbowY = shoulderY + 10;
+  const frontHandX = mx + 12 + armSwing;
+  const frontHandY = shoulderY + 20;
+  ctx.quadraticCurveTo(frontElbowX, frontElbowY, frontHandX, frontHandY);
   ctx.stroke();
-  // Front hand - small fingers
-  drawHand(ctx, frontArmEndX, frontArmEndY, 1, 0.7);
+  drawHand(ctx, frontHandX, frontHandY, 1);
 
-  // ── Head + Nose (the signature La Linea look) ──
-  ctx.lineWidth = 3.5;
-  drawHead(ctx, mx, headCenterY, neckY);
+  // ── NECK ──
+  ctx.lineWidth = LINE_WIDTH;
+  ctx.beginPath();
+  ctx.moveTo(mx, shoulderY);
+  ctx.lineTo(mx + 1, neckY);
+  ctx.stroke();
+
+  // ── HEAD + NOSE (the signature) ──
+  drawHead(ctx, mx + 1, headY, neckY);
 }
 
 function drawDuckingMano(ctx, mx, baseY) {
   const footY = baseY;
-  const crouchY = baseY - 10;
-  const bodyTopY = baseY - 20;
-  const headY = baseY - 28;
+  const crouchY = baseY - 8;
+  const bodyY = baseY - 16;
+  const headY = baseY - 24;
 
-  // Feet (flat on ground)
+  // ── Feet (spread for stability) ──
   ctx.beginPath();
-  ctx.moveTo(mx - 8, footY);
-  ctx.lineTo(mx + 2, footY);
+  ctx.moveTo(mx - 12, footY);
+  ctx.lineTo(mx - 2, footY);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(mx + 2, footY);
+  ctx.lineTo(mx + 10, footY);
   ctx.stroke();
 
-  // Crouched legs (bent)
+  // ── Bent legs ──
   ctx.beginPath();
-  ctx.moveTo(mx - 4, footY);
-  ctx.quadraticCurveTo(mx - 10, crouchY, mx - 2, bodyTopY);
+  ctx.moveTo(mx - 6, footY - 2);
+  ctx.quadraticCurveTo(mx - 10, crouchY, mx - 2, bodyY);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(mx + 6, footY - 2);
+  ctx.quadraticCurveTo(mx + 10, crouchY, mx + 2, bodyY);
   ctx.stroke();
 
-  // Hunched body
+  // ── Hunched body ──
   ctx.beginPath();
-  ctx.moveTo(mx - 2, bodyTopY);
-  ctx.quadraticCurveTo(mx + 6, bodyTopY - 4, mx + 4, headY + 6);
+  ctx.moveTo(mx, bodyY);
+  ctx.quadraticCurveTo(mx + 8, bodyY - 2, mx + 5, headY + 6);
   ctx.stroke();
 
-  // Arms tucked in front
-  ctx.lineWidth = 3;
+  // ── Arms covering head ──
+  ctx.lineWidth = LINE_WIDTH - 0.5;
   ctx.beginPath();
-  ctx.moveTo(mx + 2, bodyTopY);
-  ctx.lineTo(mx + 10, bodyTopY + 2);
+  ctx.moveTo(mx + 4, bodyY - 2);
+  ctx.quadraticCurveTo(mx + 12, bodyY - 6, mx + 14, headY + 4);
   ctx.stroke();
-  drawHand(ctx, mx + 10, bodyTopY + 2, 1, 0.5);
+  ctx.beginPath();
+  ctx.moveTo(mx - 1, bodyY - 2);
+  ctx.lineTo(mx + 8, headY + 2);
+  ctx.stroke();
 
-  // Head (smaller due to perspective, looking forward)
-  ctx.lineWidth = 3.5;
-  drawHeadDucking(ctx, mx + 2, headY);
+  // ── Head (compressed, nose forward) ──
+  ctx.lineWidth = LINE_WIDTH;
+  drawDuckHead(ctx, mx + 3, headY);
 }
 
 /**
- * Draws the iconic La Linea head with the huge hooked nose.
- * The nose is the most distinctive feature - it's large, bulbous,
- * and hooks downward prominently from the face.
+ * The iconic La Linea head.
+ * The nose is the DEFINING feature - it's huge, bulbous, protruding far
+ * to the right, with a pronounced downward hook.
+ * The head and nose form one continuous flowing outline.
  */
-function drawHead(ctx, mx, headCenterY, neckY) {
-  // Neck
-  ctx.beginPath();
-  ctx.moveTo(mx, neckY);
-  ctx.lineTo(mx, headCenterY + 7);
-  ctx.stroke();
+function drawHead(ctx, mx, headY, neckY) {
+  ctx.lineWidth = LINE_WIDTH + 0.5;
 
-  // The head and nose are drawn as one continuous shape.
-  // Starting from the back of the head, going over the top,
-  // flowing into the large nose, and back around.
+  // ── Head outline (one continuous path from back of skull through nose) ──
   ctx.beginPath();
 
-  // Back of head / back of skull (start from neck, go up and around)
-  ctx.moveTo(mx - 2, headCenterY + 5);
+  // Start at back-bottom of skull
+  ctx.moveTo(mx - 4, headY + 8);
 
-  // Back curve of head
-  ctx.quadraticCurveTo(mx - 10, headCenterY + 2, mx - 10, headCenterY - 3);
+  // Back of skull curves up
+  ctx.quadraticCurveTo(mx - 12, headY + 4, mx - 11, headY - 2);
 
-  // Top of head
-  ctx.quadraticCurveTo(mx - 8, headCenterY - 12, mx, headCenterY - 11);
+  // Over the top of the head
+  ctx.quadraticCurveTo(mx - 10, headY - 12, mx - 2, headY - 12);
 
-  // Forehead slopes into nose bridge
-  ctx.quadraticCurveTo(mx + 6, headCenterY - 10, mx + 9, headCenterY - 6);
+  // Forehead (slight forward slope)
+  ctx.quadraticCurveTo(mx + 5, headY - 12, mx + 10, headY - 8);
 
-  // The BIG nose - bridge going outward and downward
-  ctx.quadraticCurveTo(mx + 16, headCenterY - 4, mx + 19, headCenterY);
+  // NOSE BRIDGE - extends far outward
+  ctx.quadraticCurveTo(mx + 18, headY - 5, mx + 24, headY - 2);
 
-  // Nose tip curves down (the iconic hook)
-  ctx.quadraticCurveTo(mx + 21, headCenterY + 3, mx + 18, headCenterY + 5);
+  // NOSE TIP - the big bulbous hook curving downward
+  ctx.quadraticCurveTo(mx + 28, headY, mx + 26, headY + 4);
 
-  // Under nose back to face
-  ctx.quadraticCurveTo(mx + 14, headCenterY + 6, mx + 8, headCenterY + 3);
+  // UNDER NOSE - curves back toward face
+  ctx.quadraticCurveTo(mx + 22, headY + 7, mx + 16, headY + 5);
+
+  // Nostril indent
+  ctx.quadraticCurveTo(mx + 13, headY + 4, mx + 10, headY + 5);
 
   ctx.stroke();
 
-  // Mouth area - small line under nose
+  // ── Mouth line ──
+  ctx.lineWidth = LINE_WIDTH - 1;
   ctx.beginPath();
-  ctx.moveTo(mx + 6, headCenterY + 4);
-  ctx.quadraticCurveTo(mx + 3, headCenterY + 7, mx, headCenterY + 5);
+  ctx.moveTo(mx + 8, headY + 6);
+  ctx.quadraticCurveTo(mx + 4, headY + 9, mx + 1, headY + 7);
   ctx.stroke();
 
-  // Chin / jaw line back to neck
+  // ── Chin / jaw ──
+  ctx.lineWidth = LINE_WIDTH;
   ctx.beginPath();
-  ctx.moveTo(mx, headCenterY + 5);
-  ctx.quadraticCurveTo(mx - 4, headCenterY + 8, mx - 2, headCenterY + 5);
+  ctx.moveTo(mx + 1, headY + 7);
+  ctx.quadraticCurveTo(mx - 2, headY + 10, mx - 4, headY + 8);
   ctx.stroke();
 
-  // Eye - small dot, placed behind the nose bridge
+  // ── Eye (single dot, set back from nose) ──
   ctx.beginPath();
-  ctx.arc(mx + 5, headCenterY - 4, 1.8, 0, Math.PI * 2);
+  ctx.arc(mx + 6, headY - 4, 2, 0, Math.PI * 2);
   ctx.fill();
 }
 
-function drawHeadDucking(ctx, mx, headCenterY) {
-  // Smaller ducking head, nose pointing more forward
+function drawDuckHead(ctx, mx, headY) {
+  ctx.lineWidth = LINE_WIDTH + 0.3;
   ctx.beginPath();
 
-  // Back of head
-  ctx.moveTo(mx - 2, headCenterY + 4);
-  ctx.quadraticCurveTo(mx - 7, headCenterY, mx - 6, headCenterY - 5);
+  // Compact head, nose pointing forward/down
+  ctx.moveTo(mx - 3, headY + 5);
+  ctx.quadraticCurveTo(mx - 8, headY + 2, mx - 7, headY - 3);
+  ctx.quadraticCurveTo(mx - 4, headY - 8, mx + 2, headY - 7);
 
-  // Top of head
-  ctx.quadraticCurveTo(mx - 2, headCenterY - 9, mx + 3, headCenterY - 7);
-
-  // Nose (pointing more forward when ducking)
-  ctx.quadraticCurveTo(mx + 10, headCenterY - 5, mx + 14, headCenterY - 2);
-  ctx.quadraticCurveTo(mx + 16, headCenterY + 1, mx + 13, headCenterY + 3);
-  ctx.quadraticCurveTo(mx + 9, headCenterY + 4, mx + 5, headCenterY + 2);
-
+  // Nose (shorter, pointing forward since ducking)
+  ctx.quadraticCurveTo(mx + 10, headY - 5, mx + 15, headY - 1);
+  ctx.quadraticCurveTo(mx + 17, headY + 2, mx + 14, headY + 4);
+  ctx.quadraticCurveTo(mx + 10, headY + 5, mx + 6, headY + 3);
   ctx.stroke();
 
   // Mouth
+  ctx.lineWidth = LINE_WIDTH - 1;
   ctx.beginPath();
-  ctx.moveTo(mx + 4, headCenterY + 3);
-  ctx.lineTo(mx + 1, headCenterY + 4);
+  ctx.moveTo(mx + 5, headY + 4);
+  ctx.lineTo(mx + 1, headY + 5);
   ctx.stroke();
 
   // Eye
   ctx.beginPath();
-  ctx.arc(mx + 4, headCenterY - 2, 1.5, 0, Math.PI * 2);
+  ctx.arc(mx + 4, headY - 2, 1.8, 0, Math.PI * 2);
   ctx.fill();
 }
 
-/**
- * Draws expressive La Linea hands with 3-4 small finger lines.
- */
-function drawHand(ctx, x, y, dir, scale) {
-  const s = scale || 1;
+function drawHand(ctx, x, y, dir) {
   ctx.lineWidth = 2;
-
-  // 3 small finger lines fanning out
+  // 3 finger lines fanning out
   for (let i = -1; i <= 1; i++) {
     ctx.beginPath();
     ctx.moveTo(x, y);
-    const angle = (dir > 0 ? 0 : Math.PI) + i * 0.4;
-    ctx.lineTo(
-      x + Math.cos(angle) * 5 * s,
-      y + Math.sin(angle) * 5 * s - 2 * s
-    );
+    const angle = (dir > 0 ? -0.3 : Math.PI + 0.3) + i * 0.35;
+    ctx.lineTo(x + Math.cos(angle) * 5, y + Math.sin(angle) * 5);
     ctx.stroke();
   }
-
-  // Restore line width
-  ctx.lineWidth = 3.5;
+  ctx.lineWidth = LINE_WIDTH;
 }

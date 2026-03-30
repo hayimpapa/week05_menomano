@@ -1,18 +1,26 @@
-export const MANO_X = 70;
-export const BASE_SPEED = 1.8;
-export const SPEED_INC = 0.08;
+// ── Game tuning ──
+export const MANO_X = 80;
+export const BASE_SPEED = 2.0;
+export const SPEED_INC = 0.07;
 export const MAX_SPEED = 7;
-export const OBS_MIN_GAP = 280;
-export const OBS_MAX_GAP = 500;
-export const ACTION_WINDOW = 120;
-export const GAP_WIDTH = 80;
-export const WALL_HEIGHT = 70;
-export const WALL_WIDTH = 18;
+export const OBS_MIN_GAP = 300;
+export const OBS_MAX_GAP = 520;
+export const ACTION_WINDOW = 150;
+export const GAP_WIDTH = 90;
+export const WALL_HEIGHT = 75;
+export const WALL_WIDTH = 22;
 
-export const LINE_COLOR = '#e8e8e8';
-export const BG_GRAD_TOP = '#16213e';
-export const BG_GRAD_BOT = '#0f3460';
+// ── Visual ──
+export const LINE_COLOR = '#ffffff';
+export const LINE_WIDTH = 3.5;
+export const ROAD_COLOR = '#2a2a2a';
+export const ROAD_EDGE = '#3a3a3a';
+export const ROAD_MARKING = '#555';
+export const SKY_TOP = '#0a0f1a';
+export const SKY_BOTTOM = '#1a2540';
+export const ACCENT_COLOR = '#ffd54f';
 
+// ── Obstacle config ──
 export const OBS_TYPES = ['gap', 'wall', 'bird'];
 export const VALID_ACTIONS = {
   gap: ['bridge'],
