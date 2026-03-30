@@ -134,6 +134,114 @@ canvas {
   }
 }
 
+/* ══ Tutorial Popup ══ */
+#tutorial {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(5, 5, 10, 0.9);
+  z-index: 100;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+#tutorial.hidden { display: none; }
+
+.tutorial-inner {
+  background: #151515;
+  border: 2px solid #2a2a2a;
+  border-radius: 20px;
+  padding: 28px 24px 22px;
+  max-width: 320px;
+  width: 90%;
+  text-align: center;
+}
+
+.tutorial-inner h2 {
+  color: #fff;
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 18px;
+  letter-spacing: -0.3px;
+}
+
+.tutorial-rules {
+  text-align: left;
+  margin-bottom: 14px;
+}
+
+.tutorial-rule {
+  color: #ccc;
+  font-size: 14px;
+  padding: 6px 0;
+  line-height: 1.4;
+}
+
+.tutorial-rule em {
+  color: #ffd54f;
+  font-style: normal;
+  font-weight: 600;
+}
+
+.tutorial-icon {
+  display: inline-block;
+  width: 24px;
+  text-align: center;
+}
+
+.tutorial-tip {
+  color: #888;
+  font-size: 12px;
+  margin-bottom: 18px;
+  line-height: 1.4;
+}
+
+.tutorial-forget {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #666;
+  font-size: 12px;
+  cursor: pointer;
+  margin-bottom: 18px;
+}
+
+.tutorial-forget input {
+  accent-color: #ffd54f;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+#tutorialOk {
+  padding: 12px 48px;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  border: 2px solid #ffd54f;
+  border-radius: 50px;
+  background: transparent;
+  color: #ffd54f;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+#tutorialOk:hover {
+  background: #ffd54f;
+  color: #111;
+}
+
+#tutorialOk:active {
+  transform: scale(0.95);
+  background: #ffc107;
+  border-color: #ffc107;
+  color: #111;
+}
+
 /* ══ Action Buttons ══ */
 #controls {
   flex: 0 0 auto;
@@ -141,7 +249,7 @@ canvas {
   grid-template-columns: repeat(4, 1fr);
   gap: 8px;
   padding: 10px 8px;
-  padding-bottom: max(10px, env(safe-area-inset-bottom));
+  padding-bottom: max(18px, env(safe-area-inset-bottom, 18px));
   background: #0a0a0a;
   border-top: 2px solid #1a1a1a;
   z-index: 20;
@@ -201,11 +309,19 @@ canvas {
 }
 
 /* ══ Mobile optimizations ══ */
+
+/* Push controls above software nav bars (Samsung, Pixel, etc.) */
+@media (max-width: 768px) and (pointer: coarse) {
+  #controls {
+    padding-bottom: max(20px, env(safe-area-inset-bottom, 20px));
+  }
+}
+
 @media (max-width: 380px) {
   .btn { min-height: 66px; padding: 8px 2px 6px; gap: 3px; }
   .btn svg { width: 36px; height: 24px; }
   .btn span { font-size: 10px; }
-  #controls { gap: 5px; padding: 8px 5px; }
+  #controls { gap: 5px; padding: 8px 5px; padding-bottom: max(20px, env(safe-area-inset-bottom, 20px)); }
 }
 
 @media (min-width: 600px) {

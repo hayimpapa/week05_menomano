@@ -12,7 +12,7 @@ import { LINE_COLOR, LINE_WIDTH } from './constants.js';
  * - Expressive swinging arms
  */
 
-export function drawMano(ctx, mx, baseY, walkCycle, isDucking) {
+export function drawMano(ctx, mx, baseY, walkCycle, isDucking, isPunching) {
   ctx.save();
   ctx.strokeStyle = LINE_COLOR;
   ctx.fillStyle = LINE_COLOR;
@@ -22,6 +22,8 @@ export function drawMano(ctx, mx, baseY, walkCycle, isDucking) {
 
   if (isDucking) {
     drawDuckingMano(ctx, mx, baseY);
+  } else if (isPunching) {
+    drawPunchingMano(ctx, mx, baseY);
   } else {
     drawWalkingMano(ctx, mx, baseY, walkCycle);
   }
@@ -158,6 +160,87 @@ function drawDuckingMano(ctx, mx, baseY) {
   // ── Head (compressed, nose forward) ──
   ctx.lineWidth = LINE_WIDTH;
   drawDuckHead(ctx, mx + 3, headY);
+}
+
+function drawPunchingMano(ctx, mx, baseY) {
+  // La Linea tantrum punch! Leaning forward, fist extended
+  const footY = baseY;
+  const ankleY = baseY - 3;
+  const hipY = baseY - 18;
+  const chestY = baseY - 36;
+  const shoulderY = baseY - 42;
+  const neckY = baseY - 46;
+  const headY = baseY - 56;
+
+  // ── Legs (wide stance, braced) ──
+  ctx.beginPath();
+  ctx.moveTo(mx - 12, footY);
+  ctx.lineTo(mx - 4, footY);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(mx - 6, ankleY);
+  ctx.quadraticCurveTo(mx - 8, baseY - 10, mx - 2, hipY);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(mx + 4, footY);
+  ctx.lineTo(mx + 14, footY);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(mx + 8, ankleY);
+  ctx.quadraticCurveTo(mx + 10, baseY - 10, mx + 3, hipY);
+  ctx.stroke();
+
+  // ── Body (leaning forward) ──
+  ctx.beginPath();
+  ctx.moveTo(mx + 1, hipY);
+  ctx.quadraticCurveTo(mx + 10, hipY - 4, mx + 8, chestY + 4);
+  ctx.lineTo(mx + 6, shoulderY);
+  ctx.stroke();
+
+  // ── Back arm (pulled back) ──
+  ctx.lineWidth = LINE_WIDTH - 0.5;
+  ctx.beginPath();
+  ctx.moveTo(mx + 4, shoulderY + 2);
+  ctx.quadraticCurveTo(mx - 8, shoulderY + 8, mx - 12, shoulderY + 4);
+  ctx.stroke();
+  drawHand(ctx, mx - 12, shoulderY + 4, -1);
+
+  // ── Punching arm (extended far forward) ──
+  ctx.lineWidth = LINE_WIDTH + 0.5;
+  ctx.beginPath();
+  ctx.moveTo(mx + 7, shoulderY + 2);
+  ctx.quadraticCurveTo(mx + 20, shoulderY - 2, mx + 32, shoulderY + 4);
+  ctx.stroke();
+
+  // Big fist
+  ctx.lineWidth = LINE_WIDTH;
+  ctx.beginPath();
+  ctx.arc(mx + 35, shoulderY + 4, 5, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.fillStyle = LINE_COLOR;
+  ctx.fill();
+
+  // ── Neck ──
+  ctx.lineWidth = LINE_WIDTH;
+  ctx.beginPath();
+  ctx.moveTo(mx + 6, shoulderY);
+  ctx.lineTo(mx + 7, neckY);
+  ctx.stroke();
+
+  // ── Head (leaning forward angrily) ──
+  drawHead(ctx, mx + 7, headY, neckY);
+
+  // ── Anger lines above head ──
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(mx + 2, headY - 16);
+  ctx.lineTo(mx + 8, headY - 22);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(mx + 10, headY - 18);
+  ctx.lineTo(mx + 16, headY - 22);
+  ctx.stroke();
 }
 
 /**

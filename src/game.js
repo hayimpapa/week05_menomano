@@ -1,7 +1,7 @@
 import {
   MANO_X, BASE_SPEED, SPEED_INC, MAX_SPEED,
   OBS_MIN_GAP, OBS_MAX_GAP, ACTION_WINDOW,
-  GAP_WIDTH, WALL_WIDTH, WALL_HEIGHT,
+  GAP_WIDTH, WALL_WIDTH, WALL_HEIGHT, BOULDER_RADIUS,
   VALID_ACTIONS,
 } from './constants.js';
 
@@ -49,7 +49,9 @@ export function startGame(game) {
 export function spawnObstacle(game, W) {
   const types = game.score < 3
     ? ['gap', 'wall']
-    : ['gap', 'wall', 'bird', 'gap', 'wall', 'bird'];
+    : game.score < 6
+      ? ['gap', 'wall', 'bird', 'gap', 'wall', 'bird']
+      : ['gap', 'wall', 'bird', 'boulder', 'gap', 'wall', 'bird', 'boulder'];
   const type = types[Math.floor(Math.random() * types.length)];
   game.obstacles.push({
     type, x: W + 40,
@@ -101,7 +103,7 @@ function updateAction(game) {
   if (game.state !== 'acting') return;
   game.actionTimer--;
 
-  if (game.actionType === 'trampoline' || game.actionType === 'ladder') {
+  if (game.actionType === 'ladder') {
     const t = 1 - game.actionTimer / 40;
     game.manoY = -Math.sin(t * Math.PI) * (WALL_HEIGHT + 20);
   } else if (game.actionType === 'duck') {
@@ -109,6 +111,16 @@ function updateAction(game) {
   } else if (game.actionType === 'bridge') {
     const t = 1 - game.actionTimer / 40;
     game.manoY = -Math.sin(t * Math.PI) * 8;
+  } else if (game.actionType === 'smash') {
+    // Wind-up then punch forward
+    const t = 1 - game.actionTimer / 40;
+    if (t < 0.3) {
+      // Wind-up: lean back slightly
+      game.manoY = -Math.sin(t / 0.3 * Math.PI * 0.5) * 4;
+    } else {
+      // Punch forward: small lunge
+      game.manoY = -Math.sin((t - 0.3) / 0.7 * Math.PI) * 6;
+    }
   }
 
   if (game.actionTimer <= 0) {
@@ -136,6 +148,8 @@ function checkCollision(game) {
       if (MANO_X > gx1 && MANO_X < gx2) { die(game); return; }
     } else if (obs.type === 'wall') {
       if (Math.abs(obs.x - MANO_X) < WALL_WIDTH / 2 + 8) { die(game); return; }
+    } else if (obs.type === 'boulder') {
+      if (Math.abs(obs.x - MANO_X) < BOULDER_RADIUS + 6) { die(game); return; }
     } else if (obs.type === 'bird') {
       if (Math.abs(obs.x - MANO_X) < 18) { die(game); return; }
     }

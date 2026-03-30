@@ -1,6 +1,6 @@
 import {
   LINE_COLOR, LINE_WIDTH, GAP_WIDTH, WALL_HEIGHT, WALL_WIDTH,
-  ACCENT_COLOR, ROAD_COLOR,
+  BOULDER_RADIUS, ACCENT_COLOR, ROAD_COLOR,
 } from './constants.js';
 
 /**
@@ -248,11 +248,7 @@ export function drawWall(ctx, obs, groundY) {
   ctx.fillRect(wx1 - 6, groundY - 4, WALL_WIDTH + 12, 4);
 
   if (obs.acted) {
-    if (obs.actedWith === 'ladder') {
-      drawLadder(ctx, cx, groundY, top);
-    } else if (obs.actedWith === 'trampoline') {
-      drawTrampoline(ctx, cx, groundY);
-    }
+    drawLadder(ctx, cx, groundY, top);
   }
 }
 
@@ -284,57 +280,6 @@ function drawLadder(ctx, cx, groundY, top) {
     ctx.lineTo(lx + 16 + xOff, y);
     ctx.stroke();
   }
-}
-
-function drawTrampoline(ctx, cx, groundY) {
-  const tx = cx - WALL_WIDTH / 2 - 32;
-  const tw = 44;
-
-  // Frame legs
-  ctx.strokeStyle = ACCENT_COLOR;
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.moveTo(tx + 4, groundY);
-  ctx.lineTo(tx + 10, groundY - 18);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(tx + tw - 4, groundY);
-  ctx.lineTo(tx + tw - 10, groundY - 18);
-  ctx.stroke();
-
-  // Cross brace
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(tx + 8, groundY - 6);
-  ctx.lineTo(tx + tw - 8, groundY - 14);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(tx + 8, groundY - 14);
-  ctx.lineTo(tx + tw - 8, groundY - 6);
-  ctx.stroke();
-
-  // Bounce surface (curved, elastic look)
-  ctx.strokeStyle = ACCENT_COLOR;
-  ctx.lineWidth = 3.5;
-  ctx.beginPath();
-  ctx.moveTo(tx + 8, groundY - 18);
-  const bounce = Math.sin(Date.now() * 0.008) * 2;
-  ctx.quadraticCurveTo(tx + tw / 2, groundY - 24 + bounce, tx + tw - 8, groundY - 18);
-  ctx.stroke();
-
-  // Spring coils
-  ctx.strokeStyle = ACCENT_COLOR;
-  ctx.lineWidth = 1.5;
-  ctx.globalAlpha = 0.6;
-  for (let i = 0; i < 3; i++) {
-    const sx = tx + 12 + i * 10;
-    ctx.beginPath();
-    ctx.moveTo(sx, groundY - 18);
-    ctx.quadraticCurveTo(sx + 3, groundY - 15, sx, groundY - 12);
-    ctx.quadraticCurveTo(sx - 3, groundY - 9, sx, groundY - 6);
-    ctx.stroke();
-  }
-  ctx.globalAlpha = 1;
 }
 
 /**
@@ -461,7 +406,9 @@ export function drawWarning(ctx, obs, groundY, MANO_X, ACTION_WINDOW) {
     ? groundY - 85
     : obs.type === 'wall'
       ? groundY - WALL_HEIGHT - 20
-      : groundY - 25;
+      : obs.type === 'boulder'
+        ? groundY - BOULDER_RADIUS * 2 - 10
+        : groundY - 25;
   ctx.fillText('!', obs.x, wy);
 
   // Glow ring when very close
@@ -472,4 +419,137 @@ export function drawWarning(ctx, obs, groundY, MANO_X, ACTION_WINDOW) {
     ctx.arc(obs.x, wy - 6, 16 + Math.sin(Date.now() * 0.01) * 3, 0, Math.PI * 2);
     ctx.stroke();
   }
+}
+
+/**
+ * Draw a boulder (rolling rock obstacle).
+ * Rough circular rock with cracks. When smashed, shows debris fragments.
+ */
+export function drawBoulder(ctx, obs, groundY) {
+  const cx = obs.x;
+  const cy = groundY - BOULDER_RADIUS + 2;
+  const r = BOULDER_RADIUS;
+
+  if (!obs.acted) {
+    ctx.save();
+
+    // Rolling rotation
+    const roll = cx * 0.04;
+
+    // ── Shadow ──
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    ctx.beginPath();
+    ctx.ellipse(cx, groundY + 3, r * 0.9, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // ── Main rock body (irregular circle) ──
+    ctx.fillStyle = '#5a5040';
+    ctx.strokeStyle = '#7a6a55';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++) {
+      const ang = (i / 10) * Math.PI * 2 + roll;
+      const wobble = 0.88 + ((i * 7 + 3) % 5) / 20;
+      const px = cx + Math.cos(ang) * r * wobble;
+      const py = cy + Math.sin(ang) * r * wobble;
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // ── Rock texture: cracks ──
+    ctx.strokeStyle = '#3a3028';
+    ctx.lineWidth = 1.5;
+    // Crack 1
+    ctx.beginPath();
+    ctx.moveTo(cx - 8, cy - 10);
+    ctx.lineTo(cx - 2, cy);
+    ctx.lineTo(cx + 5, cy + 8);
+    ctx.stroke();
+    // Crack 2
+    ctx.beginPath();
+    ctx.moveTo(cx + 6, cy - 12);
+    ctx.lineTo(cx + 2, cy - 4);
+    ctx.lineTo(cx - 6, cy + 4);
+    ctx.stroke();
+
+    // ── Highlight (top-left) ──
+    ctx.fillStyle = 'rgba(255,255,255,0.08)';
+    ctx.beginPath();
+    ctx.arc(cx - 6, cy - 8, r * 0.4, 0, Math.PI * 2);
+    ctx.fill();
+
+    // ── Dark underside ──
+    ctx.fillStyle = 'rgba(0,0,0,0.15)';
+    ctx.beginPath();
+    ctx.arc(cx + 4, cy + 8, r * 0.45, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  } else {
+    // ── Smashed debris ──
+    drawSmashDebris(ctx, cx, cy, groundY, r);
+  }
+}
+
+function drawSmashDebris(ctx, cx, cy, groundY, r) {
+  ctx.save();
+
+  const time = Date.now() * 0.001;
+
+  // Scattered rock fragments
+  const fragments = [
+    { dx: -18, dy: -12, size: 8, rot: 0.5 },
+    { dx: 14, dy: -8, size: 10, rot: 1.2 },
+    { dx: -8, dy: 10, size: 6, rot: 2.1 },
+    { dx: 20, dy: 5, size: 7, rot: 3.0 },
+    { dx: -22, dy: 2, size: 5, rot: 4.2 },
+    { dx: 6, dy: -18, size: 6, rot: 5.5 },
+    { dx: -4, dy: 14, size: 9, rot: 0.8 },
+  ];
+
+  for (const f of fragments) {
+    ctx.fillStyle = '#5a5040';
+    ctx.strokeStyle = '#7a6a55';
+    ctx.lineWidth = 1.5;
+
+    ctx.save();
+    ctx.translate(cx + f.dx, cy + f.dy);
+    ctx.rotate(f.rot);
+
+    // Irregular fragment shape
+    ctx.beginPath();
+    ctx.moveTo(-f.size * 0.5, -f.size * 0.3);
+    ctx.lineTo(f.size * 0.4, -f.size * 0.5);
+    ctx.lineTo(f.size * 0.5, f.size * 0.3);
+    ctx.lineTo(-f.size * 0.3, f.size * 0.5);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  // Impact star/burst lines
+  ctx.strokeStyle = ACCENT_COLOR;
+  ctx.lineWidth = 2.5;
+  for (let i = 0; i < 6; i++) {
+    const ang = (i / 6) * Math.PI * 2;
+    const innerR = 8;
+    const outerR = 22;
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(ang) * innerR, cy + Math.sin(ang) * innerR);
+    ctx.lineTo(cx + Math.cos(ang) * outerR, cy + Math.sin(ang) * outerR);
+    ctx.stroke();
+  }
+
+  // Small dust cloud
+  ctx.fillStyle = 'rgba(180, 160, 130, 0.2)';
+  ctx.beginPath();
+  ctx.arc(cx, cy, r * 1.2, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
 }

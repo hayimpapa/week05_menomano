@@ -21,9 +21,11 @@ export const SKY_BOTTOM = '#1a2540';
 export const ACCENT_COLOR = '#ffd54f';
 
 // ── Obstacle config ──
-export const OBS_TYPES = ['gap', 'wall', 'bird'];
+export const BOULDER_RADIUS = 28;
+export const OBS_TYPES = ['gap', 'wall', 'bird', 'boulder'];
 export const VALID_ACTIONS = {
   gap: ['bridge'],
-  wall: ['trampoline', 'ladder'],
+  wall: ['ladder'],
+  boulder: ['smash'],
   bird: ['duck'],
 };
