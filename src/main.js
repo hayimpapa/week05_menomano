@@ -5,7 +5,7 @@ import {
 import { createGameState, startGame, handleAction, update } from './game.js';
 import { drawMano } from './mano.js';
 import {
-  drawRoad, drawGroundLine, drawGap, drawWall, drawBird, drawWarning,
+  drawRoad, drawGroundLine, drawGap, drawWall, drawBird, drawBoulder, drawWarning,
 } from './obstacles.js';
 
 // ── DOM ──
@@ -143,9 +143,9 @@ buttons.forEach(btn => {
 });
 
 const KEY_MAP = {
-  '1': 'bridge', '2': 'trampoline', '3': 'ladder', '4': 'duck',
-  'a': 'bridge', 's': 'trampoline', 'd': 'ladder', 'f': 'duck',
-  'arrowleft': 'bridge', 'arrowup': 'trampoline', 'arrowright': 'ladder', 'arrowdown': 'duck',
+  '1': 'bridge', '2': 'smash', '3': 'ladder', '4': 'duck',
+  'a': 'bridge', 's': 'smash', 'd': 'ladder', 'f': 'duck',
+  'arrowleft': 'bridge', 'arrowup': 'smash', 'arrowright': 'ladder', 'arrowdown': 'duck',
 };
 document.addEventListener('keydown', (e) => {
   const action = KEY_MAP[e.key.toLowerCase()];
@@ -340,9 +340,10 @@ function draw() {
   // The walking line
   drawGroundLine(ctx, game.obstacles, groundY, W);
 
-  // Walls and birds
+  // Walls, boulders, and birds
   for (const obs of game.obstacles) {
     if (obs.type === 'wall') drawWall(ctx, obs, groundY);
+    if (obs.type === 'boulder') drawBoulder(ctx, obs, groundY);
     if (obs.type === 'bird') drawBird(ctx, obs, groundY);
   }
 
@@ -359,7 +360,8 @@ function draw() {
   // Mano
   const walkCycle = Math.sin(game.manoAnim * 0.15);
   const isDucking = game.manoSquish || (game.state === 'acting' && game.actionType === 'duck');
-  drawMano(ctx, MANO_X, groundY + game.manoY, walkCycle, isDucking);
+  const isPunching = game.state === 'acting' && game.actionType === 'smash';
+  drawMano(ctx, MANO_X, groundY + game.manoY, walkCycle, isDucking, isPunching);
 
   // Score popups
   drawScorePopups();
