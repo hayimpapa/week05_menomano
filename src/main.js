@@ -18,6 +18,9 @@ const olScore = document.getElementById('olScore');
 const olBest = document.getElementById('olBest');
 const olBtn = document.getElementById('olBtn');
 const buttons = document.querySelectorAll('.btn');
+const tutorial = document.getElementById('tutorial');
+const tutorialOk = document.getElementById('tutorialOk');
+const tutorialForget = document.getElementById('tutorialForget');
 
 let W, H, groundY, dpr;
 let lastResizeW = 0, lastResizeH = 0;
@@ -82,10 +85,28 @@ function showMenu(isDead) {
 }
 
 function onStart() {
+  // Show tutorial on first play if not dismissed
+  if (!localStorage.getItem('mano_skip_tutorial') && !game.tutorialShown) {
+    game.tutorialShown = true;
+    tutorial.classList.remove('hidden');
+    return;
+  }
   startGame(game);
   overlay.classList.add('hidden');
   clearButtonEffects();
 }
+
+function dismissTutorial() {
+  if (tutorialForget.checked) {
+    localStorage.setItem('mano_skip_tutorial', '1');
+  }
+  tutorial.classList.add('hidden');
+  startGame(game);
+  overlay.classList.add('hidden');
+  clearButtonEffects();
+}
+
+tutorialOk.addEventListener('click', (e) => { e.stopPropagation(); dismissTutorial(); });
 
 olBtn.addEventListener('click', (e) => { e.stopPropagation(); onStart(); });
 
