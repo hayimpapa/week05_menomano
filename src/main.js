@@ -143,9 +143,9 @@ buttons.forEach(btn => {
 });
 
 const KEY_MAP = {
-  '1': 'bridge', '2': 'smash', '3': 'ladder', '4': 'duck',
-  'a': 'bridge', 's': 'smash', 'd': 'ladder', 'f': 'duck',
-  'arrowleft': 'bridge', 'arrowup': 'smash', 'arrowright': 'ladder', 'arrowdown': 'duck',
+  '1': 'bridge', '2': 'ladder', '3': 'smash', '4': 'duck',
+  'a': 'bridge', 's': 'ladder', 'd': 'smash', 'f': 'duck',
+  'arrowleft': 'bridge', 'arrowup': 'ladder', 'arrowright': 'smash', 'arrowdown': 'duck',
 };
 document.addEventListener('keydown', (e) => {
   const action = KEY_MAP[e.key.toLowerCase()];
