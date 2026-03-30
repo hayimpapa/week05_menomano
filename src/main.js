@@ -124,10 +124,14 @@ buttons.forEach(btn => {
 const KEY_MAP = {
   '1': 'bridge', '2': 'trampoline', '3': 'ladder', '4': 'duck',
   'a': 'bridge', 's': 'trampoline', 'd': 'ladder', 'f': 'duck',
+  'arrowleft': 'bridge', 'arrowup': 'trampoline', 'arrowright': 'ladder', 'arrowdown': 'duck',
 };
 document.addEventListener('keydown', (e) => {
   const action = KEY_MAP[e.key.toLowerCase()];
-  if (action) onAction(action);
+  if (action) {
+    e.preventDefault();
+    onAction(action);
+  }
   if ((e.key === ' ' || e.key === 'Enter') && game.state === 'menu') onStart();
 });
 
