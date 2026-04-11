@@ -3,6 +3,14 @@ export const MANO_X = 80;
 export const BASE_SPEED = 2.0;
 export const SPEED_INC = 0.07;
 export const MAX_SPEED = 7;
+export const DEAD_DURATION = 90;
+
+// ── Difficulty presets (starting speed) ──
+export const DIFFICULTIES = {
+  easy:   { label: 'Easy',   baseSpeed: 1.5 },
+  normal: { label: 'Normal', baseSpeed: 2.0 },
+  hard:   { label: 'Hard',   baseSpeed: 3.5 },
+};
 export const OBS_MIN_GAP = 300;
 export const OBS_MAX_GAP = 520;
 export const ACTION_WINDOW = 150;

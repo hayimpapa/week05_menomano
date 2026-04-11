@@ -1,6 +1,6 @@
 import {
   MANO_X, LINE_COLOR, LINE_WIDTH, ACTION_WINDOW,
-  SKY_TOP, SKY_BOTTOM, ACCENT_COLOR,
+  SKY_TOP, SKY_BOTTOM, ACCENT_COLOR, DEAD_DURATION, DIFFICULTIES, MAX_SPEED,
 } from './constants.js';
 import { createGameState, startGame, handleAction, update } from './game.js';
 import { drawMano } from './mano.js';
@@ -21,9 +21,11 @@ const buttons = document.querySelectorAll('.btn');
 const tutorial = document.getElementById('tutorial');
 const tutorialOk = document.getElementById('tutorialOk');
 const tutorialForget = document.getElementById('tutorialForget');
+const diffBtns = document.querySelectorAll('.diff-btn');
 
 let W, H, groundY, dpr;
 let lastResizeW = 0, lastResizeH = 0;
+let selectedDifficulty = localStorage.getItem('mano_difficulty') || 'normal';
 const game = createGameState();
 
 // ── Background elements (parallax) ──
@@ -82,7 +84,23 @@ function showMenu(isDead) {
     olBtn.textContent = 'PLAY';
   }
   overlay.classList.remove('hidden');
+  updateDifficultyUI();
 }
+
+function updateDifficultyUI() {
+  diffBtns.forEach(b => {
+    b.classList.toggle('active', b.dataset.diff === selectedDifficulty);
+  });
+}
+
+diffBtns.forEach(b => {
+  b.addEventListener('click', (e) => {
+    e.stopPropagation();
+    selectedDifficulty = b.dataset.diff;
+    localStorage.setItem('mano_difficulty', selectedDifficulty);
+    updateDifficultyUI();
+  });
+});
 
 function onStart() {
   // Show tutorial on first play if not dismissed
@@ -91,7 +109,8 @@ function onStart() {
     tutorial.classList.remove('hidden');
     return;
   }
-  startGame(game);
+  const baseSpeed = DIFFICULTIES[selectedDifficulty].baseSpeed;
+  startGame(game, baseSpeed);
   overlay.classList.add('hidden');
   clearButtonEffects();
 }
@@ -101,7 +120,8 @@ function dismissTutorial() {
     localStorage.setItem('mano_skip_tutorial', '1');
   }
   tutorial.classList.add('hidden');
-  startGame(game);
+  const baseSpeed = DIFFICULTIES[selectedDifficulty].baseSpeed;
+  startGame(game, baseSpeed);
   overlay.classList.add('hidden');
   clearButtonEffects();
 }
@@ -254,7 +274,7 @@ function drawHUD() {
   ctx.fillText('BEST', W - 16, 44);
 
   // Speed indicator (subtle bar)
-  const speedPct = (game.speed - 2) / 5;
+  const speedPct = (game.speed - (game.baseSpeed || 2)) / (MAX_SPEED - (game.baseSpeed || 2));
   if (speedPct > 0) {
     const barW = 60;
     const barX = (W - barW) / 2;
@@ -267,7 +287,7 @@ function drawHUD() {
 
 function drawDeathEffect() {
   if (game.state !== 'dead') return;
-  const a = game.deadTimer / 70;
+  const a = game.deadTimer / DEAD_DURATION;
 
   // Red vignette
   const grad = ctx.createRadialGradient(MANO_X, groundY - 30, 20, MANO_X, groundY - 30, 200);
@@ -279,7 +299,7 @@ function drawDeathEffect() {
   // La Linea tantrum: angry squiggles radiating outward
   ctx.strokeStyle = `rgba(255, 200, 200, ${a * 0.8})`;
   ctx.lineWidth = 2.5;
-  const expand = (70 - game.deadTimer) * 1.2;
+  const expand = (DEAD_DURATION - game.deadTimer) * 1.2;
   for (let i = 0; i < 8; i++) {
     const ang = (i / 8) * Math.PI * 2 + Date.now() * 0.008;
     const r = 15 + expand;
