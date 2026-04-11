@@ -3,7 +3,7 @@ export const MANO_X = 80;
 export const BASE_SPEED = 2.0;
 export const SPEED_INC = 0.07;
 export const MAX_SPEED = 7;
-export const DEAD_DURATION = 90;
+export const DEAD_DURATION = 130;
 
 // ── Difficulty presets (starting speed) ──
 export const DIFFICULTIES = {
