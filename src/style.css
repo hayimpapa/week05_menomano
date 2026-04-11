@@ -112,6 +112,43 @@ canvas {
   color: #111;
 }
 
+/* ══ Difficulty selector ══ */
+.difficulty-select {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 14px;
+}
+
+.diff-btn {
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border: 2px solid #333;
+  border-radius: 30px;
+  background: transparent;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.diff-btn:hover {
+  border-color: #888;
+  color: #aaa;
+}
+
+.diff-btn.active {
+  border-color: #ffd54f;
+  color: #ffd54f;
+  background: rgba(255, 213, 79, 0.1);
+}
+
+.diff-btn.active:hover {
+  background: rgba(255, 213, 79, 0.18);
+}
+
 .controls-hint {
   display: none;
   margin-top: 16px;

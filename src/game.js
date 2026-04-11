@@ -1,5 +1,5 @@
 import {
-  MANO_X, BASE_SPEED, SPEED_INC, MAX_SPEED,
+  MANO_X, BASE_SPEED, SPEED_INC, MAX_SPEED, DEAD_DURATION,
   OBS_MIN_GAP, OBS_MAX_GAP, ACTION_WINDOW,
   GAP_WIDTH, WALL_WIDTH, WALL_HEIGHT, BOULDER_RADIUS,
   VALID_ACTIONS,
@@ -27,10 +27,11 @@ export function createGameState() {
   };
 }
 
-export function startGame(game) {
+export function startGame(game, baseSpeed = BASE_SPEED) {
   game.state = 'running';
   game.score = 0;
-  game.speed = BASE_SPEED;
+  game.baseSpeed = baseSpeed;
+  game.speed = baseSpeed;
   game.obstacles = [];
   game.nextObsDist = 300;
   game.manoAnim = 0;
@@ -94,7 +95,7 @@ export function handleAction(game, action) {
 
 function die(game) {
   game.state = 'dead';
-  game.deadTimer = 70;
+  game.deadTimer = DEAD_DURATION;
   game.shakeTimer = 20;
   game.shakeIntensity = 8;
 }
@@ -129,7 +130,7 @@ function updateAction(game) {
     game.manoY = 0;
     game.manoSquish = false;
     game.score++;
-    game.speed = Math.min(MAX_SPEED, BASE_SPEED + game.score * SPEED_INC);
+    game.speed = Math.min(MAX_SPEED, game.baseSpeed + game.score * SPEED_INC);
 
     // Score popup
     game.scorePopups.push({
