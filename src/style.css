@@ -85,7 +85,7 @@ canvas {
   margin-bottom: 4px;
 }
 
-#overlay button {
+#overlay #olBtn {
   margin-top: 18px;
   padding: 16px 56px;
   font-size: 18px;
@@ -100,12 +100,12 @@ canvas {
   transition: all 0.15s ease;
 }
 
-#overlay button:hover {
+#overlay #olBtn:hover {
   background: #ffd54f;
   color: #111;
 }
 
-#overlay button:active {
+#overlay #olBtn:active {
   transform: scale(0.95);
   background: #ffc107;
   border-color: #ffc107;
