@@ -7,6 +7,7 @@ import { drawMano } from './mano.js';
 import {
   drawRoad, drawGroundLine, drawGap, drawWall, drawBird, drawBoulder, drawWarning,
 } from './obstacles.js';
+import { createAboutThisBuild } from './AboutThisBuild.js';
 
 // ── DOM ──
 const canvas = document.getElementById('c');
@@ -22,6 +23,30 @@ const tutorial = document.getElementById('tutorial');
 const tutorialOk = document.getElementById('tutorialOk');
 const tutorialForget = document.getElementById('tutorialForget');
 const diffBtns = document.querySelectorAll('.diff-btn');
+
+// ── Tab switching ──
+const navTabs = document.querySelectorAll('.nav-tab');
+const gameView = document.getElementById('game-view');
+const aboutView = document.getElementById('about-view');
+aboutView.appendChild(createAboutThisBuild());
+let activeTab = 'game';
+
+function setActiveTab(tab) {
+  if (tab === activeTab) return;
+  activeTab = tab;
+  navTabs.forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  gameView.classList.toggle('active', tab === 'game');
+  aboutView.classList.toggle('active', tab === 'about');
+  if (tab === 'game') {
+    // Force a resize recompute next frame so the canvas matches its new layout size.
+    lastResizeW = 0;
+    lastResizeH = 0;
+  }
+}
+
+navTabs.forEach(t => {
+  t.addEventListener('click', () => setActiveTab(t.dataset.tab));
+});
 
 let W, H, groundY, dpr;
 let lastResizeW = 0, lastResizeH = 0;
@@ -168,6 +193,7 @@ const KEY_MAP = {
   'arrowleft': 'bridge', 'arrowup': 'ladder', 'arrowright': 'smash', 'arrowdown': 'duck',
 };
 document.addEventListener('keydown', (e) => {
+  if (activeTab !== 'game') return;
   const action = KEY_MAP[e.key.toLowerCase()];
   if (action) {
     e.preventDefault();
@@ -397,10 +423,12 @@ function draw() {
 
 // ── Game loop ──
 function loop() {
-  resize();
-  const result = update(game, W);
-  if (result === 'show_menu') showMenu(true);
-  draw();
+  if (activeTab === 'game') {
+    resize();
+    const result = update(game, W);
+    if (result === 'show_menu') showMenu(true);
+    draw();
+  }
   requestAnimationFrame(loop);
 }
 
