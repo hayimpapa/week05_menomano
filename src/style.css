@@ -23,6 +23,102 @@ html, body {
   flex-direction: column;
 }
 
+/* ══ Top Nav Bar ══ */
+#navbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  padding-top: max(6px, env(safe-area-inset-top, 6px));
+  background: #0a0a0a;
+  border-bottom: 2px solid #1a1a1a;
+  z-index: 30;
+}
+
+#navbar-logo {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  padding: 3px;
+  border-radius: 6px;
+  transition: opacity 0.15s ease;
+}
+
+#navbar-logo:hover,
+#navbar-logo:focus-visible {
+  opacity: 0.75;
+  outline: none;
+}
+
+#navbar-logo img {
+  display: block;
+  height: 34px;
+  width: auto;
+  border-radius: 6px;
+}
+
+#navbar-tabs {
+  display: flex;
+  gap: 4px;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+#navbar-tabs::-webkit-scrollbar { display: none; }
+
+.nav-tab {
+  flex: 0 0 auto;
+  padding: 8px 14px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: #777;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  border-radius: 6px 6px 0 0;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.nav-tab:hover {
+  color: #ccc;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.nav-tab.active {
+  color: #ffd54f;
+  background: rgba(255, 213, 79, 0.08);
+  border-bottom-color: #ffd54f;
+}
+
+/* ══ View containers ══ */
+.view {
+  display: none;
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+.view.active { display: flex; }
+
+#game-view {
+  flex-direction: column;
+}
+
+#about-view {
+  flex-direction: column;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  background: #0a0a0a;
+}
+
 #canvas-wrap {
   position: relative;
   flex: 1 1 0;
@@ -368,4 +464,117 @@ canvas {
     padding: 12px 16px;
   }
   .btn { min-height: 80px; border-radius: 18px; }
+}
+
+/* ══ About This Build ══ */
+.about-inner {
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 22px 18px max(28px, env(safe-area-inset-bottom, 28px));
+  color: #ccc;
+}
+
+.about-header {
+  text-align: center;
+  margin-bottom: 22px;
+}
+
+.about-header h1 {
+  color: #fff;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+  margin-bottom: 8px;
+}
+
+.about-subtitle {
+  color: #888;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.about-subtitle strong {
+  color: #ffd54f;
+  font-weight: 700;
+}
+
+.about-card {
+  background: #151515;
+  border: 2px solid #2a2a2a;
+  border-radius: 16px;
+  padding: 18px 18px 20px;
+  margin-bottom: 14px;
+}
+
+.about-card h2 {
+  color: #ffd54f;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.about-card p {
+  color: #bbb;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.about-card p + p,
+.about-card p + a {
+  margin-top: 12px;
+}
+
+.about-card em {
+  color: #ddd;
+  font-style: italic;
+}
+
+.about-prompt-link {
+  display: inline-block;
+  margin-top: 6px;
+  color: #ffd54f;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.about-prompt-link:hover { color: #ffe082; }
+
+.about-btn-github {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 12px 28px;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #0a0a0a;
+  background: #4caf50;
+  border: 2px solid #4caf50;
+  border-radius: 50px;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.about-btn-github:hover {
+  background: #66bb6a;
+  border-color: #66bb6a;
+}
+
+.about-btn-github:active {
+  transform: scale(0.96);
+  background: #43a047;
+}
+
+@media (max-width: 380px) {
+  .about-inner { padding: 18px 14px; }
+  .about-header h1 { font-size: 24px; }
+  .about-card { padding: 16px; }
+  .about-card p { font-size: 13px; }
+  .nav-tab { padding: 8px 10px; font-size: 11px; }
+  #navbar-logo img { height: 30px; }
 }
