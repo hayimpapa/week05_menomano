@@ -245,6 +245,153 @@ canvas {
   background: rgba(255, 213, 79, 0.18);
 }
 
+/* ══ Leaderboard ══ */
+.leaderboard {
+  margin-top: 18px;
+  width: 280px;
+  max-width: 88vw;
+  background: rgba(20, 20, 20, 0.7);
+  border: 2px solid #2a2a2a;
+  border-radius: 14px;
+  padding: 12px 14px 14px;
+  text-align: left;
+}
+
+.leaderboard.hidden { display: none; }
+
+.leaderboard-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.leaderboard-title {
+  color: #ffd54f;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+.leaderboard-diff {
+  color: #666;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+}
+
+.leaderboard-body {
+  min-height: 40px;
+}
+
+.lb-status {
+  color: #777;
+  font-size: 12px;
+  text-align: center;
+  padding: 8px 0;
+}
+
+.lb-status.error {
+  color: #ff6b8a;
+}
+
+.lb-row {
+  display: grid;
+  grid-template-columns: 22px 1fr auto;
+  gap: 8px;
+  align-items: baseline;
+  padding: 3px 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #bbb;
+  font-variant-numeric: tabular-nums;
+}
+
+.lb-row .lb-rank {
+  color: #555;
+  text-align: right;
+  font-size: 11px;
+}
+
+.lb-row .lb-name {
+  color: #ddd;
+  letter-spacing: 1px;
+  font-weight: 700;
+  font-family: -apple-system, 'Segoe UI', monospace;
+}
+
+.lb-row .lb-score {
+  color: #ffd54f;
+  text-align: right;
+}
+
+.lb-row.lb-row-top .lb-rank { color: #ffd54f; }
+
+.lb-submit {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #2a2a2a;
+}
+
+.lb-submit.hidden { display: none; }
+
+.lb-submit input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 8px 10px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #fff;
+  background: #0e0e0e;
+  border: 2px solid #2a2a2a;
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.lb-submit input:focus {
+  border-color: #ffd54f;
+}
+
+.lb-submit input::placeholder {
+  color: #444;
+  letter-spacing: 1px;
+}
+
+.lb-submit button {
+  flex: 0 0 auto;
+  padding: 8px 14px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #ffd54f;
+  background: transparent;
+  border: 2px solid #ffd54f;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.lb-submit button:not(:disabled):hover {
+  background: #ffd54f;
+  color: #111;
+}
+
+.lb-submit button:disabled {
+  color: #444;
+  border-color: #2a2a2a;
+  cursor: not-allowed;
+}
+
 .controls-hint {
   display: none;
   margin-top: 16px;

@@ -39,6 +39,30 @@
           <button class="diff-btn active" data-diff="normal">Normal</button>
           <button class="diff-btn" data-diff="hard">Hard</button>
         </div>
+
+        <!-- Leaderboard (shown on game over) -->
+        <div id="leaderboard" class="leaderboard hidden">
+          <div class="leaderboard-header">
+            <span class="leaderboard-title">TOP 10</span>
+            <span class="leaderboard-diff" id="lbDiffLabel">NORMAL</span>
+          </div>
+          <div class="leaderboard-body" id="lbBody">
+            <div class="lb-status" id="lbStatus">Loading leaderboard...</div>
+          </div>
+          <form id="lbSubmitForm" class="lb-submit hidden" autocomplete="off">
+            <input
+              id="lbNameInput"
+              type="text"
+              maxlength="5"
+              autocomplete="off"
+              autocapitalize="characters"
+              spellcheck="false"
+              placeholder="NAME"
+            />
+            <button type="submit" id="lbSubmitBtn" disabled>Submit</button>
+          </form>
+        </div>
+
         <button id="olBtn">PLAY</button>
         <div class="controls-hint">
           <span>1/A/←</span><span>2/S/↑</span><span>3/D/→</span><span>4/F/↓</span>

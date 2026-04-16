@@ -24,6 +24,15 @@ const tutorialOk = document.getElementById('tutorialOk');
 const tutorialForget = document.getElementById('tutorialForget');
 const diffBtns = document.querySelectorAll('.diff-btn');
 
+// Leaderboard DOM
+const leaderboardEl = document.getElementById('leaderboard');
+const lbDiffLabel = document.getElementById('lbDiffLabel');
+const lbBody = document.getElementById('lbBody');
+const lbStatus = document.getElementById('lbStatus');
+const lbSubmitForm = document.getElementById('lbSubmitForm');
+const lbNameInput = document.getElementById('lbNameInput');
+const lbSubmitBtn = document.getElementById('lbSubmitBtn');
+
 // ── Tab switching ──
 const navTabs = document.querySelectorAll('.nav-tab');
 const gameView = document.getElementById('game-view');
@@ -52,6 +61,165 @@ let W, H, groundY, dpr;
 let lastResizeW = 0, lastResizeH = 0;
 let selectedDifficulty = localStorage.getItem('mano_difficulty') || 'normal';
 const game = createGameState();
+
+// ── Leaderboard state ──
+const MAX_SCORE = 99999;
+const capScore = (s) => Math.min(s, MAX_SCORE);
+
+let leaderboard = null;        // array of { name, score, created_at } or null
+let leaderboardError = false;
+let leaderboardLoading = false;
+let qualifies = false;
+let submitting = false;
+let submitted = false;
+let scoredDifficulty = null;   // difficulty the current game.score was earned in
+let leaderboardFetchToken = 0; // guards against stale fetches
+
+function resetLeaderboardState() {
+  leaderboard = null;
+  leaderboardError = false;
+  leaderboardLoading = false;
+  qualifies = false;
+  submitting = false;
+  submitted = false;
+  scoredDifficulty = null;
+  lbNameInput.value = '';
+}
+
+function computeQualifies(scoreValue) {
+  if (!Array.isArray(leaderboard)) return false;
+  if (leaderboard.length < 10) return true;
+  return scoreValue > leaderboard[leaderboard.length - 1].score;
+}
+
+function renderLeaderboard() {
+  // Difficulty label — always reflect the difficulty of the shown leaderboard
+  lbDiffLabel.textContent = (scoredDifficulty || selectedDifficulty).toUpperCase();
+
+  // Body
+  if (leaderboardLoading) {
+    lbBody.innerHTML = '';
+    const s = document.createElement('div');
+    s.className = 'lb-status';
+    s.textContent = 'Loading leaderboard...';
+    lbBody.appendChild(s);
+  } else if (leaderboardError) {
+    lbBody.innerHTML = '';
+    const s = document.createElement('div');
+    s.className = 'lb-status error';
+    s.textContent = 'Leaderboard unavailable';
+    lbBody.appendChild(s);
+  } else if (Array.isArray(leaderboard)) {
+    lbBody.innerHTML = '';
+    if (leaderboard.length === 0) {
+      const s = document.createElement('div');
+      s.className = 'lb-status';
+      s.textContent = 'No scores yet — be the first!';
+      lbBody.appendChild(s);
+    } else {
+      leaderboard.forEach((entry, i) => {
+        const row = document.createElement('div');
+        row.className = 'lb-row' + (i < 3 ? ' lb-row-top' : '');
+        const rank = document.createElement('span');
+        rank.className = 'lb-rank';
+        rank.textContent = (i + 1) + '.';
+        const name = document.createElement('span');
+        name.className = 'lb-name';
+        name.textContent = entry.name;
+        const score = document.createElement('span');
+        score.className = 'lb-score';
+        score.textContent = entry.score;
+        row.appendChild(rank);
+        row.appendChild(name);
+        row.appendChild(score);
+        lbBody.appendChild(row);
+      });
+    }
+  }
+
+  // Submit form visibility
+  const showForm = qualifies && !submitted && !leaderboardError && !leaderboardLoading;
+  lbSubmitForm.classList.toggle('hidden', !showForm);
+
+  // Submit button state
+  const canSubmit = !submitting && lbNameInput.value.trim().length > 0;
+  lbSubmitBtn.disabled = !canSubmit;
+  lbSubmitBtn.textContent = submitting ? '...' : 'Submit';
+}
+
+async function fetchLeaderboard(difficulty) {
+  const token = ++leaderboardFetchToken;
+  leaderboardLoading = true;
+  leaderboardError = false;
+  leaderboard = null;
+  renderLeaderboard();
+  try {
+    const res = await fetch('/api/scores?difficulty=' + encodeURIComponent(difficulty));
+    if (!res.ok) throw new Error('Fetch failed');
+    const data = await res.json();
+    if (token !== leaderboardFetchToken) return; // stale
+    leaderboard = Array.isArray(data) ? data : [];
+    leaderboardLoading = false;
+    qualifies = computeQualifies(capScore(game.score));
+  } catch (err) {
+    if (token !== leaderboardFetchToken) return;
+    leaderboard = null;
+    leaderboardLoading = false;
+    leaderboardError = true;
+    qualifies = false;
+  }
+  renderLeaderboard();
+}
+
+async function submitScore() {
+  if (submitting || submitted) return;
+  if (!scoredDifficulty) return;
+  const cleaned = lbNameInput.value
+    .trim()
+    .substring(0, 5)
+    .toUpperCase()
+    .replace(/\s/g, '');
+  if (cleaned.length === 0) return;
+
+  submitting = true;
+  renderLeaderboard();
+  try {
+    const res = await fetch('/api/scores', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: cleaned,
+        score: capScore(game.score),
+        difficulty: scoredDifficulty,
+      }),
+    });
+    if (!res.ok) throw new Error('Submit failed');
+    submitted = true;
+    submitting = false;
+    // Refresh the displayed top 10
+    await fetchLeaderboard(scoredDifficulty);
+  } catch (err) {
+    submitting = false;
+    leaderboardError = true;
+    renderLeaderboard();
+  }
+}
+
+// Enforce [A-Z0-9] and max length 5 in real time
+lbNameInput.addEventListener('input', () => {
+  const cleaned = lbNameInput.value
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '')
+    .substring(0, 5);
+  if (cleaned !== lbNameInput.value) lbNameInput.value = cleaned;
+  renderLeaderboard();
+});
+
+lbSubmitForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  submitScore();
+});
 
 // ── Background elements (parallax) ──
 const buildings = [];
@@ -98,15 +266,26 @@ function showMenu(isDead) {
     }
     olTitle.textContent = 'Game Over';
     olSub.textContent = '';
-    olScore.textContent = 'Score: ' + game.score;
-    olBest.textContent = 'Best: ' + game.best;
+    olScore.textContent = 'Score: ' + capScore(game.score);
+    olBest.textContent = 'Best: ' + capScore(game.best);
     olBtn.textContent = 'RETRY';
+
+    // Show and fetch leaderboard for the difficulty just played.
+    // Captured so switching the diff buttons (to pick the next game) does
+    // not move the goalposts for the score we just earned.
+    scoredDifficulty = selectedDifficulty;
+    leaderboardEl.classList.remove('hidden');
+    renderLeaderboard();
+    fetchLeaderboard(scoredDifficulty);
   } else {
     olTitle.textContent = 'Menő Manó';
     olSub.textContent = 'La Linea Runner';
     olScore.textContent = game.best > 0 ? 'Best: ' + game.best : '';
     olBest.textContent = '';
     olBtn.textContent = 'PLAY';
+
+    // Hide leaderboard on the start menu
+    leaderboardEl.classList.add('hidden');
   }
   overlay.classList.remove('hidden');
   updateDifficultyUI();
@@ -136,6 +315,8 @@ function onStart() {
   }
   const baseSpeed = DIFFICULTIES[selectedDifficulty].baseSpeed;
   startGame(game, baseSpeed);
+  resetLeaderboardState();
+  leaderboardEl.classList.add('hidden');
   overlay.classList.add('hidden');
   clearButtonEffects();
 }
@@ -147,6 +328,8 @@ function dismissTutorial() {
   tutorial.classList.add('hidden');
   const baseSpeed = DIFFICULTIES[selectedDifficulty].baseSpeed;
   startGame(game, baseSpeed);
+  resetLeaderboardState();
+  leaderboardEl.classList.add('hidden');
   overlay.classList.add('hidden');
   clearButtonEffects();
 }
@@ -194,6 +377,10 @@ const KEY_MAP = {
 };
 document.addEventListener('keydown', (e) => {
   if (activeTab !== 'game') return;
+  // Don't intercept keys while typing into the leaderboard name input,
+  // otherwise letters mapped to actions (A/S/D/F) get swallowed.
+  const t = e.target;
+  if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
   const action = KEY_MAP[e.key.toLowerCase()];
   if (action) {
     e.preventDefault();
