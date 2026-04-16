@@ -30,7 +30,8 @@ async function handleGet(req, res) {
     .limit(10)
 
   if (error) {
-    return res.status(500).json({ error: 'Failed to fetch scores' })
+    console.error('[GET /api/scores] supabase error:', error)
+    return res.status(500).json({ error: 'Failed to fetch scores', detail: error.message })
   }
   return res.status(200).json(data)
 }
@@ -56,7 +57,8 @@ async function handlePost(req, res) {
     .insert({ name: cleanName, score: clampedScore, difficulty })
 
   if (error) {
-    return res.status(500).json({ error: 'Failed to save score' })
+    console.error('[POST /api/scores] supabase insert error:', error)
+    return res.status(500).json({ error: 'Failed to save score', detail: error.message })
   }
   return res.status(201).json({ success: true })
 }
