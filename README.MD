@@ -6,13 +6,14 @@ An endless runner game inspired by the classic Italian animated character **La L
 
 Mano runs automatically. Obstacles appear from the right — you must choose the correct action before he reaches them:
 
-| Obstacle | Correct Action(s) | Description |
-|----------|-------------------|-------------|
-| **Gap** | Bridge | Creates an arc bridge across the pothole |
-| **Wall** | Trampoline / Ladder | Jump over or climb the construction barrier |
+| Obstacle | Correct Action | Description |
+|----------|----------------|-------------|
+| **Gap** | Bridge | Lay an arc bridge across the pothole |
+| **Wall** | Ladder | Climb over the construction barrier |
+| **Boulder** | Smash | Punch through the rock blocking the line |
 | **Bird** | Duck | Crouch to avoid the flying crow |
 
-Choosing the wrong action — or acting too late — ends the game. The speed increases with every point scored.
+Obstacles are introduced gradually: gaps and walls from the start, birds after a few points, and boulders once you're warmed up. Choosing the wrong action — or acting too late — ends the game, and the speed ramps up with every point scored.
 
 ## Controls
 
@@ -21,8 +22,8 @@ Choosing the wrong action — or acting too late — ends the game. The speed in
 | Action | Keys |
 |--------|------|
 | Bridge | `1` / `A` / `←` |
-| Trampoline | `2` / `S` / `↑` |
-| Ladder | `3` / `D` / `→` |
+| Ladder | `2` / `S` / `↑` |
+| Smash | `3` / `D` / `→` |
 | Duck | `4` / `F` / `↓` |
 | Start Game | `Space` / `Enter` |
 
