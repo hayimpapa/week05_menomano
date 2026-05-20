@@ -80,6 +80,7 @@ for local development, in a `.env.local` file at the project root:
 |----------|-------------|
 | `SUPABASE_URL` | Your Supabase project URL |
 | `SUPABASE_SERVICE_ROLE_KEY` | Service role key. **Never** expose this to the client — it bypasses Row Level Security. Always keep it server-side only. |
+| `ALLOWED_ORIGINS` | Optional. Comma-separated list of origins permitted to POST scores (e.g. `https://your.site,https://www.your.site`). Leave unset for local dev (no enforcement). |
 
 `.env.local` is already in `.gitignore`. Do not commit these values.
 
@@ -88,5 +89,10 @@ for local development, in a `.env.local` file at the project root:
 - Top 10 per difficulty, ordered by `score DESC`, then `created_at ASC`
   (earliest submission wins a tie).
 - Max score: 99999 (clamped on both client and server).
-- Max name length: 5 characters, `A–Z` and `0–9` only.
-- No auth, no rate limiting, no duplicate prevention — keep it simple.
+- Max name length: 5 characters, `A–Z` and `0–9` only (enforced on the server).
+- POSTs are rate-limited per IP (5 per minute, best-effort per warm
+  serverless instance) and gated by the `ALLOWED_ORIGINS` allowlist when set.
+- No authentication: the client is still trusted to report its own score, so
+  a determined attacker who controls their browser can still submit forged
+  scores. These checks raise the bar against casual abuse; they do not make
+  the leaderboard cryptographically tamper-proof.
